@@ -8,7 +8,7 @@ sys.path.insert(0, str(ROOT_DIR))
 
 from app.database.connection import Base, engine, SessionLocal
 from app.models.lead import Lead
-
+from app.models.user import User
 
 DEFAULT_SOURCE_DB = Path("/Users/user/Desktop/LeadVault_Matrix/banco/leadvault.db")
 BATCH_SIZE = 1000
