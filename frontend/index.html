@@ -1,0 +1,1815 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LeadVault CRM</title>
+  <style>
+    :root {
+      --bg: #eef1f7;
+      --panel: #ffffff;
+      --line: #d7deeb;
+      --text: #162846;
+      --muted: #64748b;
+      --blue: #2087f2;
+      --green: #16a66a;
+      --amber: #c98100;
+      --violet: #6d5dfc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body.logged-out .app-shell {
+      display: none;
+    }
+
+    body.logged-in .login-page {
+      display: none;
+    }
+
+    .login-page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #f8fafc 0%, #e8eef8 100%);
+    }
+
+    .login-card {
+      width: min(460px, 100%);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 60px rgba(15, 23, 42, 0.13);
+      padding: 30px;
+    }
+
+    .login-card h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .login-card .subtitle {
+      margin-bottom: 22px;
+    }
+
+    .login-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .login-form input {
+      min-height: 48px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 0 14px;
+      font-size: 16px;
+    }
+
+    .topbar {
+      height: 68px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 0 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      font-size: 22px;
+      font-weight: 800;
+      color: #b42318;
+      min-width: 170px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 18px;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .nav button {
+      min-height: 38px;
+      padding: 0 6px;
+      color: #334155;
+      background: transparent;
+      border: 0;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .nav button.active {
+      color: var(--blue);
+      border-bottom: 3px solid var(--blue);
+      border-radius: 0;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
+    .user-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      font-weight: 800;
+    }
+
+    .user-pill span {
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .logout-button {
+      min-height: 38px;
+      padding: 0 14px;
+    }
+
+    .quantity-input {
+      min-height: 48px;
+      width: 120px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 0 12px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .admin-grid input,
+    .admin-grid select {
+      min-height: 42px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+
+    .checkbox-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #475569;
+      font-weight: 800;
+    }
+
+    .inventory-meter {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #475569;
+      font-weight: 800;
+      border-top: 1px solid #eef2f7;
+      padding-top: 10px;
+    }
+
+    .inventory-meter strong {
+      color: var(--green);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr minmax(280px, 420px) auto auto auto;
+      gap: 16px;
+      align-items: center;
+      padding: 20px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .search {
+      display: flex;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f7f9fc;
+      min-height: 48px;
+    }
+
+    .search input {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      padding: 0 16px;
+      font-size: 16px;
+      outline: 0;
+    }
+
+    button {
+      border: 0;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 800;
+      border-radius: 4px;
+      min-height: 48px;
+      padding: 0 18px;
+      cursor: pointer;
+    }
+
+    .ghost {
+      color: #475569;
+      background: #fff;
+      border: 1px solid #bdc9dc;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(280px, 1fr));
+      min-width: 1960px;
+      height: calc(100vh - 137px);
+      overflow-x: auto;
+    }
+
+    .admin-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      padding: 16px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .view-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      padding: 16px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 24px;
+      color: var(--text);
+    }
+
+    body.broker-mode .admin-only,
+    body.broker-mode .manager-only,
+    body.broker-mode .root-only,
+    body.broker-mode .creator-only {
+      display: none;
+    }
+
+    body.manager-mode .root-only {
+      display: none;
+    }
+
+    body.view-leads .toolbar,
+    body.view-atendimento .toolbar,
+    body.view-relatorios .toolbar,
+    body.view-usuarios .toolbar,
+    body.view-leads .admin-panel,
+    body.view-atendimento .admin-panel,
+    body.view-relatorios .admin-panel,
+    body.view-usuarios .admin-panel {
+      display: none;
+    }
+
+    .panel-box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px;
+    }
+
+    .panel-title {
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .inline-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+    }
+
+    .inline-form input,
+    .inline-form select {
+      min-height: 42px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+
+    .broker-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .profile-summary {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .broker-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      color: #334155;
+      font-weight: 700;
+      border-top: 1px solid #eef2f7;
+      padding-top: 8px;
+    }
+
+    .small-badge {
+      color: var(--green);
+      background: #e9f8f0;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 20;
+      padding: 24px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(760px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 22px;
+    }
+
+    .modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-weight: 800;
+      color: #475569;
+    }
+
+    .modal-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .modal-field input,
+    .modal-field select,
+    .modal-field textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 9px 11px;
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+    }
+
+    .modal-field textarea {
+      min-height: 78px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 0 22px 22px;
+    }
+
+    .admin-lead-tools {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      margin-top: 4px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .warning {
+      background: #f59e0b;
+      color: #111827;
+    }
+
+    .column {
+      border-right: 1px solid #cfd7e6;
+      background: #eef1f7;
+      display: flex;
+      flex-direction: column;
+      min-width: 280px;
+    }
+
+    .column-header {
+      height: 86px;
+      padding: 18px 16px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .column-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .count {
+      margin-left: auto;
+      color: var(--blue);
+      border: 1px solid var(--blue);
+      border-radius: 4px;
+      min-width: 28px;
+      text-align: center;
+      font-size: 14px;
+      padding: 2px 6px;
+    }
+
+    .value {
+      margin-top: 8px;
+      color: #95a1b8;
+      font-weight: 700;
+    }
+
+    .cards {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #dfe5ef;
+      border-left: 5px solid #24c991;
+      border-radius: 7px;
+      box-shadow: 0 2px 6px rgba(17, 24, 39, 0.08);
+      padding: 14px 14px 10px;
+      cursor: grab;
+    }
+
+    .card:active {
+      cursor: grabbing;
+    }
+
+    .card.stage-novo-lead {
+      border-left-color: #2087f2;
+    }
+
+    .card.stage-atendimento {
+      border-left-color: #24c991;
+    }
+
+    .card.stage-tentativa-de-contato {
+      border-left-color: #f59e0b;
+    }
+
+    .card.stage-visita {
+      border-left-color: #6d5dfc;
+    }
+
+    .card.stage-montagem-de-pasta {
+      border-left-color: #0f766e;
+    }
+
+    .card.stage-venda-ganha {
+      border-left-color: #16a34a;
+    }
+
+    .card.stage-perdido {
+      border-left-color: #dc2626;
+      background: #fff7f7;
+    }
+
+    .column.drop-target .cards {
+      background: #e4eefc;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .card-title {
+      font-weight: 800;
+      line-height: 1.25;
+      min-height: 20px;
+    }
+
+    .badge {
+      border: 1px solid #c6d2e4;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 13px;
+      font-weight: 800;
+      background: #f8fafc;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .edit-pill {
+      width: 28px;
+      height: 28px;
+      display: inline-grid;
+      place-items: center;
+      color: #2563eb;
+      background: #eef5ff;
+      border: 1px solid #bcd3f5;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .card-meta {
+      margin-top: 8px;
+      color: #53657f;
+      font-weight: 800;
+      text-decoration: underline;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .status span {
+      color: var(--blue);
+    }
+
+    .divider {
+      border-top: 1px dashed #d8dfeb;
+      margin: 10px -14px;
+    }
+
+    .line {
+      color: #213653;
+      margin-top: 5px;
+      font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .line strong {
+      color: var(--green);
+      margin-right: 6px;
+    }
+
+    .empty {
+      align-self: center;
+      color: #b0b9ca;
+      border: 1px dashed #aeb8ca;
+      border-radius: 32px;
+      margin-top: 160px;
+      padding: 18px 26px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      .topbar {
+        gap: 12px;
+      }
+
+      .nav {
+        display: none;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+    .admin-panel {
+      grid-template-columns: 1fr;
+      }
+
+      .view-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-row {
+        grid-template-columns: 1fr;
+      }
+
+      .inline-form {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-body {
+        grid-template-columns: 1fr;
+      }
+
+      .board {
+        height: auto;
+      }
+    }
+  </style>
+</head>
+<body class="logged-out">
+  <section class="login-page">
+    <form class="login-card" id="loginForm">
+      <div class="brand">LeadVault</div>
+      <h1>Entrar no painel</h1>
+      <div class="subtitle">Acesse sua sessão de root, gerente ou broker.</div>
+      <div class="login-form">
+        <input id="loginUser" value="root" placeholder="Usuario" autocomplete="username">
+        <input id="loginPassword" value="12345m*" placeholder="Senha" type="password" autocomplete="current-password">
+        <button type="submit">Entrar</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="app-shell">
+  <header class="topbar">
+    <div class="brand">LeadVault</div>
+    <nav class="nav">
+      <button class="active" data-view-target="vendas">Vendas</button>
+      <button data-view-target="leads">Leads</button>
+      <button data-view-target="atendimento">Atendimento</button>
+      <button data-view-target="relatorios">Relatórios</button>
+      <button class="root-only" data-view-target="usuarios">Usuários</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="user-pill" id="sessionUser">root <span>Administrador</span></div>
+    <button class="ghost logout-button" id="logoutButton">Sair</button>
+  </header>
+
+  <section class="toolbar">
+    <div>
+      <h1>Funil de Vendas</h1>
+      <div class="subtitle" id="totalText">Carregando leads...</div>
+    </div>
+    <label class="search">
+      <input id="searchInput" type="search" placeholder="Buscar cliente">
+    </label>
+    <button class="ghost" id="reloadButton">Filtrar Dados</button>
+    <select id="brokerFilter" class="ghost manager-only" style="min-height:48px;border-radius:4px;padding:0 12px;">
+      <option value="">Todos os brokers</option>
+    </select>
+    <input id="leadSendQuantity" class="quantity-input manager-only" type="number" min="1" step="1" value="100" title="Quantidade de leads">
+    <button id="seedBrokerButton" class="manager-only">Enviar ao Broker</button>
+  </section>
+
+  <section class="admin-panel">
+    <div class="panel-box">
+      <div class="panel-title">Meu perfil</div>
+      <div class="profile-summary">
+        <div>
+          <div id="profileName">root</div>
+          <div class="line" id="profileDetails">Administrador</div>
+        </div>
+        <button class="ghost" id="editMyProfileButton">Editar perfil</button>
+      </div>
+    </div>
+    <div class="panel-box manager-only">
+      <div class="panel-title">Distribuir por segmento e país</div>
+      <div class="admin-grid">
+        <select id="assignBroker">
+          <option value="">Selecione broker</option>
+        </select>
+        <select id="assignSegment">
+          <option value="">Todos os segmentos</option>
+        </select>
+        <select id="assignCountry">
+          <option value="">Todos os países</option>
+        </select>
+        <input id="assignQuantity" type="number" min="1" step="1" value="100" placeholder="Quantidade">
+        <button id="assignSmartButton">Enviar leads filtrados</button>
+        <button class="ghost" id="refreshInventoryButton">Atualizar estoque</button>
+        <div class="inventory-meter">
+          <span>Leads livres neste filtro: <strong id="assignAvailableCount">0</strong></span>
+          <span>Total livre no banco: <strong id="assignTotalFree">0</strong></span>
+        </div>
+      </div>
+    </div>
+    <div class="panel-box root-only">
+      <div class="panel-title">Voltar leads ao banco</div>
+      <div class="admin-grid">
+        <select id="returnBroker">
+          <option value="">Todos os brokers</option>
+        </select>
+        <input id="returnSegment" placeholder="Segmento / nicho">
+        <input id="returnCountry" placeholder="País">
+        <input id="returnQuantity" type="number" min="1" step="1" value="100" placeholder="Quantidade">
+        <label class="checkbox-line">
+          <input id="returnAllLeads" type="checkbox">
+          Todos
+        </label>
+        <button class="warning" id="returnBulkButton">Voltar ao banco</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view active" id="view-vendas">
+    <main class="board" id="board"></main>
+  </section>
+
+  <section class="view" id="view-leads">
+    <div class="view-grid">
+      <div class="panel-box">
+        <div class="panel-title">Banco de leads</div>
+        <div class="metric-row">
+          <div class="metric">Leads livres<strong id="metricFreeLeads">0</strong></div>
+          <div class="metric">Segmentos<strong id="metricSegments">0</strong></div>
+          <div class="metric">Países<strong id="metricCountries">0</strong></div>
+          <div class="metric">Combinações<strong id="metricCombinations">0</strong></div>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-title">Estoque por segmento</div>
+        <div class="broker-list" id="segmentStockList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-atendimento">
+    <div class="view-grid">
+      <div class="panel-box">
+        <div class="panel-title">Atendimento</div>
+        <div class="line">Use o funil para abrir o card, editar contato e mover etapas. Esta aba vai receber fila de tarefas, chamadas e follow-up.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-relatorios">
+    <div class="view-grid">
+      <div class="panel-box">
+        <div class="panel-title">Relatórios</div>
+        <div class="metric-row">
+          <div class="metric">Brokers ativos<strong id="metricBrokers">0</strong></div>
+          <div class="metric">Leads distribuídos<strong id="metricAssigned">0</strong></div>
+          <div class="metric">No banco<strong id="metricBank">0</strong></div>
+          <div class="metric">Venda ganha<strong id="metricWon">0</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view root-only" id="view-usuarios">
+    <div class="view-grid">
+      <div class="panel-box creator-only">
+        <div class="panel-title">Cadastrar usuário autorizado</div>
+        <div class="inline-form">
+          <input id="newBrokerUser" placeholder="usuario">
+          <input id="newBrokerPassword" value="12345m*" placeholder="senha inicial">
+          <select id="newBrokerRole" class="root-only">
+            <option value="BROKER">Broker</option>
+            <option value="GERENTE">Gerente</option>
+          </select>
+          <button id="createBrokerButton">Cadastrar</button>
+        </div>
+      </div>
+      <div class="panel-box root-only">
+        <div class="panel-title">Gerentes e brokers</div>
+        <div class="broker-list" id="brokerList"></div>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div class="modal-backdrop" id="leadModal">
+    <form class="modal" id="leadForm">
+      <div class="modal-header">
+        <div class="modal-title">Editar lead</div>
+        <button class="ghost" type="button" id="closeLeadModal">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="leadId">
+        <label class="modal-field">
+          Nome
+          <input id="leadNome">
+        </label>
+        <label class="modal-field">
+          Contato
+          <input id="leadContato">
+        </label>
+        <label class="modal-field">
+          Email
+          <input id="leadEmail">
+        </label>
+        <label class="modal-field">
+          Site
+          <input id="leadSite">
+        </label>
+        <label class="modal-field">
+          Instagram
+          <input id="leadInstagram" placeholder="@empresa">
+        </label>
+        <label class="modal-field">
+          LinkedIn
+          <input id="leadLinkedin" placeholder="https://linkedin.com/...">
+        </label>
+        <label class="modal-field">
+          Facebook
+          <input id="leadFacebook" placeholder="https://facebook.com/...">
+        </label>
+        <label class="modal-field">
+          Outras redes
+          <input id="leadRedesSociais" placeholder="TikTok, YouTube, X...">
+        </label>
+        <label class="modal-field">
+          Nicho
+          <input id="leadNicho">
+        </label>
+        <label class="modal-field">
+          País
+          <input id="leadPais">
+        </label>
+        <label class="modal-field">
+          Score
+          <input id="leadScore" type="number" min="0" max="100">
+        </label>
+        <label class="modal-field">
+          Etapa
+          <select id="leadPipeline"></select>
+        </label>
+        <label class="modal-field full">
+          Endereço
+          <textarea id="leadEndereco"></textarea>
+        </label>
+        <label class="modal-field full">
+          Observações
+          <textarea id="leadObservacoes" placeholder="Notas comerciais, preferências, histórico de contato..."></textarea>
+        </label>
+        <div class="admin-lead-tools manager-only">
+          <label class="modal-field">
+            Mover para broker
+            <select id="leadBrokerTarget"></select>
+          </label>
+          <button type="button" id="moveLeadBrokerButton">Mover</button>
+          <button class="warning" type="button" id="returnLeadBankButton">Voltar ao banco</button>
+          <button class="danger" type="button" id="deleteLeadButton">Excluir</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="ghost" type="button" id="cancelLeadEdit">Cancelar</button>
+        <button type="submit">Salvar alterações</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="userModal">
+    <form class="modal" id="userForm">
+      <div class="modal-header">
+        <div class="modal-title">Editar usuário</div>
+        <button class="ghost" type="button" id="closeUserModal">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editUserId">
+        <label class="modal-field">
+          Usuário
+          <input id="editUsername">
+        </label>
+        <label class="modal-field">
+          Nome completo
+          <input id="editFullName">
+        </label>
+        <label class="modal-field root-only">
+          Perfil
+          <select id="editUserRole">
+            <option value="BROKER">Broker</option>
+            <option value="GERENTE">Gerente</option>
+            <option value="ROOT">Root</option>
+          </select>
+        </label>
+        <label class="modal-field">
+          Nova senha
+          <input id="editUserPassword" type="password" placeholder="manter atual">
+        </label>
+        <label class="modal-field">
+          CRECI
+          <input id="editCreci" placeholder="CRECI">
+        </label>
+        <label class="modal-field">
+          Data nasc.
+          <input id="editDataNascimento" type="date">
+        </label>
+        <label class="modal-field">
+          Telefone
+          <input id="editTelefone">
+        </label>
+        <label class="modal-field">
+          Email pessoal
+          <input id="editEmailPessoal">
+        </label>
+        <label class="modal-field">
+          Documento
+          <input id="editDocumento" placeholder="CPF/RG">
+        </label>
+        <label class="modal-field full">
+          Observações
+          <textarea id="editUserObservacoes"></textarea>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="danger root-only" type="button" id="deleteUserButton">Excluir usuário</button>
+        <button class="ghost" type="button" id="cancelUserEdit">Cancelar</button>
+        <button type="submit">Salvar usuário</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const API_BASE = window.location.protocol === "file:"
+      ? "http://127.0.0.1:8000"
+      : window.location.origin;
+    const ROOT_KEY = "";
+    const stages = [
+      "NOVO LEAD",
+      "ATENDIMENTO",
+      "TENTATIVA DE CONTATO",
+      "VISITA",
+      "MONTAGEM DE PASTA",
+      "VENDA GANHA",
+      "PERDIDO"
+    ];
+
+    const stageLabels = {
+      "NOVO LEAD": "Aguardando Atendimento",
+      "ATENDIMENTO": "Atendimento",
+      "TENTATIVA DE CONTATO": "1ª Tentativa",
+      "VISITA": "Visita",
+      "MONTAGEM DE PASTA": "Montagem de Pasta",
+      "VENDA GANHA": "Venda Ganha",
+      "PERDIDO": "Perdido"
+    };
+
+    const boardEl = document.getElementById("board");
+    const totalText = document.getElementById("totalText");
+    const searchInput = document.getElementById("searchInput");
+    const brokerFilter = document.getElementById("brokerFilter");
+    const brokerList = document.getElementById("brokerList");
+    const sessionUser = document.getElementById("sessionUser");
+    const leadModal = document.getElementById("leadModal");
+    const leadPipeline = document.getElementById("leadPipeline");
+    const userModal = document.getElementById("userModal");
+    let cachedBrokers = [];
+    let cachedInventory = null;
+    let editingOwnProfile = false;
+    let currentUser = { id: 1, username: "root", role: "ROOT" };
+    let cachedBoard = null;
+
+    leadPipeline.innerHTML = stages.map((stage) => {
+      return `<option value="${stage}">${stageLabels[stage]}</option>`;
+    }).join("");
+
+    function money() {
+      return "R$ 0,00";
+    }
+
+    function showView(viewName) {
+      document.querySelectorAll(".view").forEach((view) => {
+        view.classList.toggle("active", view.id === `view-${viewName}`);
+      });
+      document.querySelectorAll(".nav button[data-view-target]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.viewTarget === viewName);
+      });
+      document.body.classList.remove("view-vendas", "view-leads", "view-atendimento", "view-relatorios", "view-usuarios");
+      document.body.classList.add(`view-${viewName}`);
+    }
+
+    function cardTemplate(lead) {
+      const title = lead.nome || "Lead sem nome";
+      const niche = [lead.nicho, lead.pais].filter(Boolean).join(" · ") || "SEM CLASSIFICACAO";
+      const contact = lead.contato || "Contato nao informado";
+      const email = lead.email || "Email nao informado";
+      const site = lead.site || "Site nao informado";
+      const stageClass = `stage-${(lead.pipeline || "NOVO LEAD").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+
+      return `
+        <article class="card ${stageClass}" draggable="true" data-lead-id="${lead.id}">
+          <div class="card-header">
+            <div class="card-title">${title}</div>
+            <div class="card-actions">
+              <span class="edit-pill" title="Abrir e editar lead">✎</span>
+              <div class="badge">${lead.id}</div>
+            </div>
+          </div>
+          <div class="card-meta">${niche}</div>
+          <div class="status">Status: <span>${stageLabels[lead.pipeline] || lead.pipeline}</span></div>
+          <div class="status">Score: <span>${lead.score ?? 0}</span></div>
+          <div class="divider"></div>
+          <div class="line"><strong>☎</strong>${contact}</div>
+          <div class="line"><strong>✉</strong>${email}</div>
+          <div class="line"><strong>↗</strong>${site}</div>
+        </article>
+      `;
+    }
+
+    function findLeadInCache(leadId) {
+      if (!cachedBoard) {
+        return null;
+      }
+
+      for (const stage of stages) {
+        const lead = (cachedBoard.board[stage] || []).find((item) => String(item.id) === String(leadId));
+        if (lead) {
+          return lead;
+        }
+      }
+
+      return null;
+    }
+
+    function openLeadModal(lead) {
+      if (!lead) {
+        return;
+      }
+
+      document.getElementById("leadId").value = lead.id;
+      document.getElementById("leadNome").value = lead.nome || "";
+      document.getElementById("leadContato").value = lead.contato || "";
+      document.getElementById("leadEmail").value = lead.email || "";
+      document.getElementById("leadSite").value = lead.site || "";
+      document.getElementById("leadInstagram").value = lead.instagram || "";
+      document.getElementById("leadLinkedin").value = lead.linkedin || "";
+      document.getElementById("leadFacebook").value = lead.facebook || "";
+      document.getElementById("leadRedesSociais").value = lead.redes_sociais || "";
+      document.getElementById("leadNicho").value = lead.nicho || "";
+      document.getElementById("leadPais").value = lead.pais || "";
+      document.getElementById("leadScore").value = lead.score ?? "";
+      document.getElementById("leadPipeline").value = lead.pipeline || "NOVO LEAD";
+      document.getElementById("leadEndereco").value = lead.endereco || "";
+      document.getElementById("leadObservacoes").value = lead.observacoes || "";
+      document.getElementById("leadBrokerTarget").value = lead.assigned_to_user_id || "";
+      leadModal.classList.add("open");
+    }
+
+    function closeLeadModal() {
+      leadModal.classList.remove("open");
+    }
+
+    function openUserModal(user) {
+      if (!user) {
+        return;
+      }
+
+      document.getElementById("editUserId").value = user.id;
+      document.getElementById("editUsername").value = user.username || "";
+      document.getElementById("editFullName").value = user.full_name || "";
+      document.getElementById("editUserRole").value = user.role || "BROKER";
+      document.getElementById("editUserPassword").value = "";
+      document.getElementById("editCreci").value = user.creci || "";
+      document.getElementById("editDataNascimento").value = user.data_nascimento || "";
+      document.getElementById("editTelefone").value = user.telefone || "";
+      document.getElementById("editEmailPessoal").value = user.email_pessoal || "";
+      document.getElementById("editDocumento").value = user.documento || "";
+      document.getElementById("editUserObservacoes").value = user.observacoes || "";
+      userModal.classList.add("open");
+    }
+
+    function closeUserModal() {
+      editingOwnProfile = false;
+      userModal.classList.remove("open");
+    }
+
+    function refreshProfileBox() {
+      document.getElementById("profileName").textContent = currentUser.full_name || currentUser.username;
+      document.getElementById("profileDetails").textContent = [
+        currentUser.role,
+        currentUser.creci ? `CRECI: ${currentUser.creci}` : "",
+        currentUser.telefone || ""
+      ].filter(Boolean).join(" | ");
+    }
+
+    function openMyProfile() {
+      editingOwnProfile = true;
+      openUserModal(currentUser);
+    }
+
+    function renderBoard(data) {
+      cachedBoard = data;
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      let total = 0;
+
+      boardEl.innerHTML = stages.map((stage) => {
+        const allLeads = data.board[stage] || [];
+        const leads = searchTerm
+          ? allLeads.filter((lead) => {
+              const text = `${lead.nome || ""} ${lead.email || ""} ${lead.contato || ""} ${lead.nicho || ""} ${lead.pais || ""}`.toLowerCase();
+              return text.includes(searchTerm);
+            })
+          : allLeads;
+
+        total += leads.length;
+
+        return `
+          <section class="column" data-stage="${stage}">
+            <div class="column-header">
+              <div class="column-title">
+                ${stageLabels[stage]}
+                <span class="count">${leads.length}</span>
+              </div>
+              <div class="value">${money()}</div>
+            </div>
+            <div class="cards">
+              ${leads.length ? leads.map(cardTemplate).join("") : '<div class="empty">Nenhum Cliente nessa Etapa!</div>'}
+            </div>
+          </section>
+        `;
+      }).join("");
+
+      totalText.textContent = `Encontramos ${total} registros carregados no funil.`;
+      bindDragAndDrop();
+      bindCardOpen();
+    }
+
+    async function loadBoard() {
+      totalText.textContent = "Carregando leads...";
+      const selectedBroker = currentUser.role === "BROKER" ? String(currentUser.id) : brokerFilter.value;
+      const brokerParam = selectedBroker ? `&assigned_to_user_id=${selectedBroker}` : "";
+      const response = await fetch(`${API_BASE}/leads/kanban?limit_per_stage=25${brokerParam}`);
+      const data = await response.json();
+      renderBoard(data);
+    }
+
+    function updateInventoryCount() {
+      if (!cachedInventory) {
+        return;
+      }
+
+      const nicho = document.getElementById("assignSegment").value;
+      const pais = document.getElementById("assignCountry").value;
+      let available = cachedInventory.total_livre || 0;
+
+      if (nicho || pais) {
+        available = cachedInventory.combinacoes
+          .filter((item) => {
+          return (!nicho || item.nicho === nicho) && (!pais || item.pais === pais);
+          })
+          .reduce((sum, item) => sum + item.total, 0);
+      }
+
+      document.getElementById("assignAvailableCount").textContent = available;
+      document.getElementById("assignTotalFree").textContent = cachedInventory.total_livre || 0;
+
+      const quantity = Number(document.getElementById("assignQuantity").value);
+      document.getElementById("assignSmartButton").disabled = available <= 0 || !Number.isInteger(quantity) || quantity < 1;
+    }
+
+    async function loadInventory() {
+      const response = await fetch(`${API_BASE}/leads/inventory`);
+      if (!response.ok) {
+        return;
+      }
+
+      cachedInventory = await response.json();
+      document.getElementById("assignSegment").innerHTML = '<option value="">Todos os segmentos</option>' + cachedInventory.nichos.map((item) => {
+        return `<option value="${item.nome}">${item.nome} (${item.total})</option>`;
+      }).join("");
+      document.getElementById("assignCountry").innerHTML = '<option value="">Todos os países</option>' + cachedInventory.paises.map((item) => {
+        return `<option value="${item.nome}">${item.nome} (${item.total})</option>`;
+      }).join("");
+      document.getElementById("metricFreeLeads").textContent = cachedInventory.total_livre || 0;
+      document.getElementById("metricBank").textContent = cachedInventory.total_livre || 0;
+      document.getElementById("metricSegments").textContent = cachedInventory.nichos.length;
+      document.getElementById("metricCountries").textContent = cachedInventory.paises.length;
+      document.getElementById("metricCombinations").textContent = cachedInventory.combinacoes.length;
+      document.getElementById("segmentStockList").innerHTML = cachedInventory.nichos.slice(0, 12).map((item) => {
+        return `
+          <div class="broker-row">
+            <span>${item.nome}</span>
+            <span class="small-badge">${item.total} livres</span>
+          </div>
+        `;
+      }).join("");
+      updateInventoryCount();
+    }
+
+    async function sendToBroker() {
+      const brokerId = document.getElementById("assignBroker").value || brokerFilter.value;
+      const quantityInput = document.getElementById("assignQuantity").value || document.getElementById("leadSendQuantity").value;
+      const quantity = Number(quantityInput);
+      const nicho = document.getElementById("assignSegment").value.trim();
+      const pais = document.getElementById("assignCountry").value.trim();
+
+      if (!brokerId) {
+        alert("Selecione um broker antes de enviar leads");
+        return;
+      }
+
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        alert("Informe uma quantidade valida a partir de 1");
+        return;
+      }
+
+      const available = Number(document.getElementById("assignAvailableCount").textContent || 0);
+      if (available <= 0) {
+        alert("Nao ha leads livres para esse segmento/pais");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/users/assign-leads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-root-key": ROOT_KEY,
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({
+          broker_id: Number(brokerId),
+          limit: quantity,
+          nicho: nicho || null,
+          pais: pais || null
+        })
+      });
+      const result = await response.json();
+      alert(`${result.leads_enviados} leads enviados para ${result.broker}`);
+      brokerFilter.value = brokerId;
+      await loadBrokers();
+      await loadInventory();
+      await loadBoard();
+    }
+
+    function applyUserMode() {
+      sessionUser.innerHTML = `${currentUser.username} <span>${currentUser.role}</span>`;
+      refreshProfileBox();
+
+      if (currentUser.role === "BROKER") {
+        brokerFilter.value = String(currentUser.id);
+        brokerFilter.disabled = true;
+        document.getElementById("seedBrokerButton").disabled = true;
+        document.getElementById("leadSendQuantity").disabled = true;
+        document.getElementById("createBrokerButton").disabled = true;
+        document.body.className = "logged-in broker-mode";
+      } else if (currentUser.role === "GERENTE") {
+        document.body.className = "logged-in manager-mode";
+        document.getElementById("newBrokerRole").value = "BROKER";
+        document.getElementById("createBrokerButton").disabled = false;
+        document.getElementById("seedBrokerButton").disabled = false;
+        document.getElementById("leadSendQuantity").disabled = false;
+        brokerFilter.disabled = false;
+      } else {
+        document.body.className = "logged-in root-mode";
+        brokerFilter.disabled = false;
+        document.getElementById("seedBrokerButton").disabled = false;
+        document.getElementById("leadSendQuantity").disabled = false;
+        document.getElementById("createBrokerButton").disabled = false;
+      }
+    }
+
+    async function enterDashboard(user) {
+      currentUser = user;
+      localStorage.setItem("leadvault_user", JSON.stringify(user));
+      applyUserMode();
+      showView("vendas");
+      await loadBrokers();
+      await loadInventory();
+      await loadBoard();
+    }
+
+    async function login(event) {
+      event.preventDefault();
+      const username = document.getElementById("loginUser").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      const response = await fetch(`${API_BASE}/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (!response.ok) {
+        alert("Login invalido");
+        return;
+      }
+
+      await enterDashboard(await response.json());
+    }
+
+    function logout() {
+      localStorage.removeItem("leadvault_user");
+      currentUser = { id: 1, username: "root", role: "ROOT" };
+      cachedBoard = null;
+      document.body.className = "logged-out";
+      boardEl.innerHTML = "";
+      totalText.textContent = "Carregando leads...";
+      document.getElementById("loginPassword").value = "";
+    }
+
+    async function createBroker() {
+      const username = document.getElementById("newBrokerUser").value.trim();
+      const password = document.getElementById("newBrokerPassword").value;
+      const role = document.getElementById("newBrokerRole").value;
+
+      if (!username || !password) {
+        alert("Informe usuario e senha do broker");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/users/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-root-key": ROOT_KEY,
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          role,
+          full_name: username
+        })
+      });
+
+      if (!response.ok) {
+        alert("Nao foi possivel cadastrar broker");
+        return;
+      }
+
+      document.getElementById("newBrokerUser").value = "";
+      await loadBrokers();
+    }
+
+    async function loadBrokers() {
+      const response = await fetch(`${API_BASE}/users/brokers/summary`, {
+        headers: {
+          "x-root-key": ROOT_KEY,
+          "x-actor-id": String(currentUser.id)
+        }
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const brokers = await response.json();
+      cachedBrokers = brokers;
+      const totalAssigned = brokers.reduce((sum, broker) => sum + broker.total_leads, 0);
+      const totalWon = brokers.reduce((sum, broker) => sum + (broker.pipeline_counts?.["VENDA GANHA"] || 0), 0);
+      document.getElementById("metricBrokers").textContent = brokers.length;
+      document.getElementById("metricAssigned").textContent = totalAssigned;
+      document.getElementById("metricWon").textContent = totalWon;
+      if (cachedInventory) {
+        document.getElementById("metricBank").textContent = cachedInventory.total_livre || 0;
+      }
+      const currentValue = brokerFilter.value;
+      brokerFilter.innerHTML = '<option value="">Todos os brokers</option>' + brokers.map((broker) => {
+        return `<option value="${broker.id}">${broker.username}</option>`;
+      }).join("");
+      document.getElementById("assignBroker").innerHTML = '<option value="">Selecione broker</option>' + brokers.map((broker) => {
+        return `<option value="${broker.id}">${broker.username}</option>`;
+      }).join("");
+      brokerFilter.value = currentUser.role === "BROKER" ? String(currentUser.id) : currentValue;
+      document.getElementById("returnBroker").innerHTML = '<option value="">Todos os brokers</option>' + brokers.map((broker) => {
+        return `<option value="${broker.id}">${broker.username}</option>`;
+      }).join("");
+      document.getElementById("leadBrokerTarget").innerHTML = '<option value="">Sem broker / banco</option>' + brokers.map((broker) => {
+        return `<option value="${broker.id}">${broker.username}</option>`;
+      }).join("");
+
+      brokerList.innerHTML = brokers.map((broker) => {
+        const counts = broker.pipeline_counts || {};
+        const detalhe = Object.entries(counts).map(([stage, count]) => `${stage}: ${count}`).join(" | ") || "sem leads";
+        return `
+          <div class="broker-row">
+            <span>${broker.username}</span>
+            <span class="small-badge">${broker.total_leads} leads</span>
+            <button class="ghost" data-broker-id="${broker.id}">Ver</button>
+            <button class="ghost" data-edit-user-id="${broker.id}">Editar</button>
+            <span style="grid-column: 1 / -1; color:#64748b; font-size:13px;">${detalhe}</span>
+          </div>
+        `;
+      }).join("");
+
+      brokerList.querySelectorAll("button[data-broker-id]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          brokerFilter.value = button.dataset.brokerId;
+          await loadBoard();
+        });
+      });
+
+      brokerList.querySelectorAll("button[data-edit-user-id]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const user = cachedBrokers.find((broker) => String(broker.id) === String(button.dataset.editUserId));
+          openUserModal(user);
+        });
+      });
+    }
+
+    function bindDragAndDrop() {
+      boardEl.querySelectorAll(".card").forEach((card) => {
+        card.addEventListener("dragstart", (event) => {
+          event.stopPropagation();
+          event.dataTransfer.setData("text/plain", card.dataset.leadId);
+        });
+      });
+
+      boardEl.querySelectorAll(".column").forEach((column) => {
+        column.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          column.classList.add("drop-target");
+        });
+
+        column.addEventListener("dragleave", () => {
+          column.classList.remove("drop-target");
+        });
+
+        column.addEventListener("drop", async (event) => {
+          event.preventDefault();
+          column.classList.remove("drop-target");
+          const leadId = event.dataTransfer.getData("text/plain");
+          const pipeline = column.dataset.stage;
+
+          await fetch(`${API_BASE}/leads/${leadId}/pipeline`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pipeline })
+          });
+
+          await loadBrokers();
+          await loadBoard();
+        });
+      });
+    }
+
+    function bindCardOpen() {
+      boardEl.querySelectorAll(".card").forEach((card) => {
+        card.addEventListener("click", () => {
+          openLeadModal(findLeadInCache(card.dataset.leadId));
+        });
+      });
+    }
+
+    async function saveLead(event) {
+      event.preventDefault();
+      const leadId = document.getElementById("leadId").value;
+      const scoreValue = document.getElementById("leadScore").value;
+
+      await fetch(`${API_BASE}/leads/${leadId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: document.getElementById("leadNome").value,
+          contato: document.getElementById("leadContato").value,
+          email: document.getElementById("leadEmail").value,
+          site: document.getElementById("leadSite").value,
+          instagram: document.getElementById("leadInstagram").value,
+          linkedin: document.getElementById("leadLinkedin").value,
+          facebook: document.getElementById("leadFacebook").value,
+          redes_sociais: document.getElementById("leadRedesSociais").value,
+          nicho: document.getElementById("leadNicho").value,
+          pais: document.getElementById("leadPais").value,
+          score: scoreValue === "" ? null : Number(scoreValue),
+          pipeline: document.getElementById("leadPipeline").value,
+          endereco: document.getElementById("leadEndereco").value,
+          observacoes: document.getElementById("leadObservacoes").value
+        })
+      });
+
+      closeLeadModal();
+      await loadBrokers();
+      await loadInventory();
+      await loadBoard();
+    }
+
+    async function saveUser(event) {
+      event.preventDefault();
+      const userId = document.getElementById("editUserId").value;
+      const password = document.getElementById("editUserPassword").value;
+      const payload = {
+        username: document.getElementById("editUsername").value,
+        full_name: document.getElementById("editFullName").value,
+        creci: document.getElementById("editCreci").value,
+        data_nascimento: document.getElementById("editDataNascimento").value,
+        telefone: document.getElementById("editTelefone").value,
+        email_pessoal: document.getElementById("editEmailPessoal").value,
+        documento: document.getElementById("editDocumento").value,
+        observacoes: document.getElementById("editUserObservacoes").value
+      };
+
+      if (currentUser.role === "ROOT" && !editingOwnProfile) {
+        payload.role = document.getElementById("editUserRole").value;
+      }
+
+      if (password) {
+        payload.password = password;
+      }
+
+      const url = editingOwnProfile
+        ? `${API_BASE}/users/${userId}/profile`
+        : `${API_BASE}/users/${userId}`;
+
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-root-key": ROOT_KEY,
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        alert("Nao foi possivel salvar usuario");
+        return;
+      }
+
+      if (editingOwnProfile) {
+        const updatedUser = await response.json();
+        currentUser = updatedUser;
+        sessionUser.innerHTML = `${currentUser.username} <span>${currentUser.role}</span>`;
+        refreshProfileBox();
+        closeUserModal();
+        await loadBoard();
+        return;
+      }
+
+      closeUserModal();
+      await loadBrokers();
+      await loadInventory();
+      await loadBoard();
+    }
+
+    async function deleteUser() {
+      const userId = document.getElementById("editUserId").value;
+
+      if (!userId || String(userId) === String(currentUser.id)) {
+        alert("Root nao pode excluir a propria conta");
+        return;
+      }
+
+      if (!confirm("Excluir/desativar este usuario?")) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "x-root-key": ROOT_KEY,
+          "x-actor-id": String(currentUser.id)
+        }
+      });
+
+      if (!response.ok) {
+        alert("Somente root pode excluir usuarios");
+        return;
+      }
+
+      closeUserModal();
+      await loadBrokers();
+      await loadBoard();
+    }
+
+    async function moveLeadToBroker() {
+      const leadId = document.getElementById("leadId").value;
+      const targetBrokerId = document.getElementById("leadBrokerTarget").value;
+
+      if (!targetBrokerId) {
+        alert("Selecione um broker");
+        return;
+      }
+
+      await fetch(`${API_BASE}/leads/${leadId}/assign`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({ assigned_to_user_id: Number(targetBrokerId) })
+      });
+
+      await fetch(`${API_BASE}/leads/${leadId}/pipeline`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pipeline: "ATENDIMENTO" })
+      });
+
+      closeLeadModal();
+      await loadBrokers();
+      await loadBoard();
+    }
+
+    async function returnLeadToBank() {
+      const leadId = document.getElementById("leadId").value;
+      await fetch(`${API_BASE}/leads/${leadId}/return-to-bank`, {
+        method: "PATCH",
+        headers: { "x-actor-id": String(currentUser.id) }
+      });
+
+      closeLeadModal();
+      await loadBrokers();
+      await loadBoard();
+    }
+
+    async function returnBulkLeadsToBank() {
+      const all = document.getElementById("returnAllLeads").checked;
+      const quantity = Number(document.getElementById("returnQuantity").value);
+      const brokerId = document.getElementById("returnBroker").value;
+      const nicho = document.getElementById("returnSegment").value.trim();
+      const pais = document.getElementById("returnCountry").value.trim();
+
+      if (!all && (!Number.isInteger(quantity) || quantity < 1)) {
+        alert("Informe uma quantidade valida ou marque Todos");
+        return;
+      }
+
+      const message = all
+        ? "Voltar TODOS os leads filtrados para o banco?"
+        : `Voltar ${quantity} leads filtrados para o banco?`;
+
+      if (!confirm(message)) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/users/return-leads-to-bank`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({
+          broker_id: brokerId ? Number(brokerId) : null,
+          limit: all ? null : quantity,
+          all,
+          nicho: nicho || null,
+          pais: pais || null
+        })
+      });
+
+      if (!response.ok) {
+        alert("Somente root pode voltar leads ao banco em lote");
+        return;
+      }
+
+      const result = await response.json();
+      alert(`${result.leads_devolvidos} leads voltaram ao banco`);
+      await loadBrokers();
+      await loadBoard();
+    }
+
+    async function deleteLead() {
+      const leadId = document.getElementById("leadId").value;
+      if (!confirm("Excluir este lead definitivamente?")) {
+        return;
+      }
+
+      await fetch(`${API_BASE}/leads/${leadId}`, {
+        method: "DELETE",
+        headers: { "x-actor-id": String(currentUser.id) }
+      });
+
+      closeLeadModal();
+      await loadBrokers();
+      await loadBoard();
+    }
+
+    document.getElementById("reloadButton").addEventListener("click", loadBoard);
+    document.getElementById("seedBrokerButton").addEventListener("click", sendToBroker);
+    document.getElementById("loginForm").addEventListener("submit", login);
+    document.getElementById("logoutButton").addEventListener("click", logout);
+    document.getElementById("createBrokerButton").addEventListener("click", createBroker);
+    document.getElementById("editMyProfileButton").addEventListener("click", openMyProfile);
+    document.getElementById("moveLeadBrokerButton").addEventListener("click", moveLeadToBroker);
+    document.getElementById("returnLeadBankButton").addEventListener("click", returnLeadToBank);
+    document.getElementById("returnBulkButton").addEventListener("click", returnBulkLeadsToBank);
+    document.getElementById("assignSmartButton").addEventListener("click", sendToBroker);
+    document.getElementById("refreshInventoryButton").addEventListener("click", loadInventory);
+    document.getElementById("assignSegment").addEventListener("change", updateInventoryCount);
+    document.getElementById("assignCountry").addEventListener("change", updateInventoryCount);
+    document.getElementById("leadSendQuantity").addEventListener("input", (event) => {
+      document.getElementById("assignQuantity").value = event.target.value;
+      updateInventoryCount();
+    });
+    document.getElementById("assignQuantity").addEventListener("input", (event) => {
+      document.getElementById("leadSendQuantity").value = event.target.value;
+      updateInventoryCount();
+    });
+    document.getElementById("deleteLeadButton").addEventListener("click", deleteLead);
+    document.getElementById("deleteUserButton").addEventListener("click", deleteUser);
+    document.querySelectorAll(".nav button[data-view-target]").forEach((button) => {
+      button.addEventListener("click", () => {
+        showView(button.dataset.viewTarget);
+      });
+    });
+    document.getElementById("leadForm").addEventListener("submit", saveLead);
+    document.getElementById("userForm").addEventListener("submit", saveUser);
+    document.getElementById("closeLeadModal").addEventListener("click", closeLeadModal);
+    document.getElementById("cancelLeadEdit").addEventListener("click", closeLeadModal);
+    document.getElementById("closeUserModal").addEventListener("click", closeUserModal);
+    document.getElementById("cancelUserEdit").addEventListener("click", closeUserModal);
+    leadModal.addEventListener("click", (event) => {
+      if (event.target === leadModal) {
+        closeLeadModal();
+      }
+    });
+    userModal.addEventListener("click", (event) => {
+      if (event.target === userModal) {
+        closeUserModal();
+      }
+    });
+    brokerFilter.addEventListener("change", loadBoard);
+    searchInput.addEventListener("input", () => {
+      if (cachedBoard) {
+        renderBoard(cachedBoard);
+      }
+    });
+
+    const savedUser = localStorage.getItem("leadvault_user");
+    if (savedUser) {
+      enterDashboard(JSON.parse(savedUser)).catch(() => {
+        localStorage.removeItem("leadvault_user");
+        document.body.className = "logged-out";
+      });
+    }
+  </script>
+</body>
+</html>
