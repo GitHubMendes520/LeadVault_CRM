@@ -733,6 +733,64 @@
       margin-right: 6px;
     }
 
+    .lead-country {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .lead-country .flag {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .deal-value {
+      color: #0f766e;
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 7px;
+    }
+
+    .contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .contact-actions a {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #c8d5e8;
+      border-radius: 999px;
+      padding: 0 9px;
+      color: #1d4ed8;
+      background: #f8fbff;
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .broker-toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      max-width: 360px;
+      border: 1px solid #a7f3d0;
+      border-radius: 8px;
+      background: #ecfdf5;
+      color: #065f46;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+      padding: 14px 16px;
+      font-weight: 800;
+    }
+
     .empty {
       align-self: center;
       color: #b0b9ca;
@@ -1042,6 +1100,10 @@
           <input id="leadScore" type="number" min="0" max="100">
         </label>
         <label class="modal-field">
+          Valor do negócio
+          <input id="leadValorNegocio" type="number" min="0" step="0.01" placeholder="0,00">
+        </label>
+        <label class="modal-field">
           Etapa
           <select id="leadPipeline"></select>
         </label>
@@ -1156,6 +1218,19 @@
       "PERDIDO": "Perdido"
     };
 
+    const countryProfiles = {
+      MX: { flag: "🇲🇽", label: "México", language: "Espanhol" },
+      MEXICO: { flag: "🇲🇽", label: "México", language: "Espanhol" },
+      UK: { flag: "🇬🇧", label: "UK · Londres", language: "Inglês" },
+      LONDON: { flag: "🇬🇧", label: "UK · Londres", language: "Inglês" },
+      EUA: { flag: "🇺🇸", label: "EUA", language: "Inglês" },
+      USA: { flag: "🇺🇸", label: "EUA", language: "Inglês" },
+      US: { flag: "🇺🇸", label: "EUA", language: "Inglês" },
+      BR: { flag: "🇧🇷", label: "Brasil", language: "Português" },
+      BRASIL: { flag: "🇧🇷", label: "Brasil", language: "Português" },
+      BRAZIL: { flag: "🇧🇷", label: "Brasil", language: "Português" }
+    };
+
     const boardEl = document.getElementById("board");
     const totalText = document.getElementById("totalText");
     const searchInput = document.getElementById("searchInput");
@@ -1170,13 +1245,92 @@
     let editingOwnProfile = false;
     let currentUser = { id: 1, username: "root", role: "ROOT" };
     let cachedBoard = null;
+    let brokerRefreshTimer = null;
 
     leadPipeline.innerHTML = stages.map((stage) => {
       return `<option value="${stage}">${stageLabels[stage]}</option>`;
     }).join("");
 
     function money() {
-      return "R$ 0,00";
+      return formatCurrency(0);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
+      });
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      }).format(Number(value || 0));
+    }
+
+    function countryInfo(pais) {
+      const key = String(pais || "").trim().toUpperCase();
+      return countryProfiles[key] || {
+        flag: "🌐",
+        label: pais || "País não informado",
+        language: "Idioma a confirmar"
+      };
+    }
+
+    function cleanPhoneNumber(value) {
+      return String(value || "").replace(/\D/g, "");
+    }
+
+    function whatsappNumber(rawPhone, pais) {
+      const digits = cleanPhoneNumber(rawPhone);
+      const key = String(pais || "").trim().toUpperCase();
+
+      if (!digits) {
+        return "";
+      }
+
+      if (digits.startsWith("00")) {
+        return digits.slice(2);
+      }
+
+      if (digits.length > 10 && !digits.startsWith("0")) {
+        return digits;
+      }
+
+      if (["BR", "BRASIL", "BRAZIL"].includes(key)) {
+        return `55${digits}`;
+      }
+
+      if (["MX", "MEXICO"].includes(key)) {
+        return `52${digits}`;
+      }
+
+      if (["UK", "LONDON"].includes(key)) {
+        return `44${digits}`;
+      }
+
+      if (["EUA", "USA", "US"].includes(key)) {
+        return `1${digits}`;
+      }
+
+      return digits;
+    }
+
+    function contactActionTemplate(lead) {
+      const phone = cleanPhoneNumber(lead.contato);
+      const whats = whatsappNumber(lead.contato, lead.pais);
+      const actions = [];
+
+      if (whats) {
+        actions.push(`<a href="https://wa.me/${whats}" target="_blank" rel="noopener">WhatsApp</a>`);
+      }
+
+      if (phone) {
+        actions.push(`<a href="tel:${phone}">Ligar</a>`);
+        actions.push(`<a href="data:text/vcard;charset=utf-8,BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3A${encodeURIComponent(lead.nome || "Lead LeadVault")}%0ATEL%3A${phone}%0AEMAIL%3A${encodeURIComponent(lead.email || "")}%0AEND%3AVCARD" download="${escapeHtml((lead.nome || "lead").replace(/[^a-z0-9]+/gi, "-"))}.vcf">Contato</a>`);
+      }
+
+      return actions.length ? `<div class="contact-actions">${actions.join("")}</div>` : "";
     }
 
     function showView(viewName) {
@@ -1196,24 +1350,29 @@
       const contact = lead.contato || "Contato nao informado";
       const email = lead.email || "Email nao informado";
       const site = lead.site || "Site nao informado";
+      const country = countryInfo(lead.pais);
+      const value = Number(lead.valor_negocio || 0);
       const stageClass = `stage-${(lead.pipeline || "NOVO LEAD").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 
       return `
         <article class="card ${stageClass}" draggable="true" data-lead-id="${lead.id}">
           <div class="card-header">
-            <div class="card-title">${title}</div>
+            <div class="card-title">${escapeHtml(title)}</div>
             <div class="card-actions">
               <span class="edit-pill" title="Abrir e editar lead">✎</span>
               <div class="badge">${lead.id}</div>
             </div>
           </div>
-          <div class="card-meta">${niche}</div>
-          <div class="status">Status: <span>${stageLabels[lead.pipeline] || lead.pipeline}</span></div>
+          <div class="card-meta">${escapeHtml(niche)}</div>
+          <div class="lead-country"><span class="flag">${country.flag}</span>${escapeHtml(country.label)} · ${escapeHtml(country.language)}</div>
+          <div class="status">Status: <span>${escapeHtml(stageLabels[lead.pipeline] || lead.pipeline)}</span></div>
           <div class="status">Score: <span>${lead.score ?? 0}</span></div>
+          <div class="deal-value">Negócio: ${formatCurrency(value)}</div>
           <div class="divider"></div>
-          <div class="line"><strong>☎</strong>${contact}</div>
-          <div class="line"><strong>✉</strong>${email}</div>
-          <div class="line"><strong>↗</strong>${site}</div>
+          <div class="line"><strong>☎</strong>${escapeHtml(contact)}</div>
+          <div class="line"><strong>✉</strong>${escapeHtml(email)}</div>
+          <div class="line"><strong>↗</strong>${escapeHtml(site)}</div>
+          ${contactActionTemplate(lead)}
         </article>
       `;
     }
@@ -1250,6 +1409,7 @@
       document.getElementById("leadNicho").value = lead.nicho || "";
       document.getElementById("leadPais").value = lead.pais || "";
       document.getElementById("leadScore").value = lead.score ?? "";
+      document.getElementById("leadValorNegocio").value = lead.valor_negocio ?? "";
       document.getElementById("leadPipeline").value = lead.pipeline || "NOVO LEAD";
       document.getElementById("leadEndereco").value = lead.endereco || "";
       document.getElementById("leadObservacoes").value = lead.observacoes || "";
@@ -1299,6 +1459,35 @@
       openUserModal(currentUser);
     }
 
+    function showBrokerToast(message) {
+      const existingToast = document.querySelector(".broker-toast");
+      if (existingToast) {
+        existingToast.remove();
+      }
+
+      const toast = document.createElement("div");
+      toast.className = "broker-toast";
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 6500);
+    }
+
+    function notifyBrokerAboutNewLeads(total) {
+      if (currentUser.role !== "BROKER") {
+        return;
+      }
+
+      const key = `leadvault_broker_total_${currentUser.id}`;
+      const previousValue = localStorage.getItem(key);
+
+      if (previousValue !== null && total > Number(previousValue)) {
+        const diff = total - Number(previousValue);
+        showBrokerToast(`Você recebeu ${diff} novo${diff > 1 ? "s" : ""} lead${diff > 1 ? "s" : ""}.`);
+      }
+
+      localStorage.setItem(key, String(total));
+    }
+
     function renderBoard(data) {
       cachedBoard = data;
       const searchTerm = searchInput.value.trim().toLowerCase();
@@ -1314,6 +1503,7 @@
           : allLeads;
 
         total += leads.length;
+        const stageValue = leads.reduce((sum, lead) => sum + Number(lead.valor_negocio || 0), 0);
 
         return `
           <section class="column" data-stage="${stage}">
@@ -1322,7 +1512,7 @@
                 ${stageLabels[stage]}
                 <span class="count">${leads.length}</span>
               </div>
-              <div class="value">${money()}</div>
+              <div class="value">${formatCurrency(stageValue)}</div>
             </div>
             <div class="cards">
               ${leads.length ? leads.map(cardTemplate).join("") : '<div class="empty">Nenhum Cliente nessa Etapa!</div>'}
@@ -1332,6 +1522,7 @@
       }).join("");
 
       totalText.textContent = `Encontramos ${total} registros carregados no funil.`;
+      notifyBrokerAboutNewLeads(total);
       bindDragAndDrop();
       bindCardOpen();
     }
@@ -1380,7 +1571,8 @@
         return `<option value="${item.nome}">${item.nome} (${item.total})</option>`;
       }).join("");
       document.getElementById("assignCountry").innerHTML = '<option value="">Todos os países</option>' + cachedInventory.paises.map((item) => {
-        return `<option value="${item.nome}">${item.nome} (${item.total})</option>`;
+        const country = countryInfo(item.nome);
+        return `<option value="${item.nome}">${country.flag} ${country.label} · ${country.language} (${item.total})</option>`;
       }).join("");
       document.getElementById("metricFreeLeads").textContent = cachedInventory.total_livre || 0;
       document.getElementById("metricBank").textContent = cachedInventory.total_livre || 0;
@@ -1478,6 +1670,24 @@
       await loadBrokers();
       await loadInventory();
       await loadBoard();
+      startBrokerLeadWatch();
+    }
+
+    function startBrokerLeadWatch() {
+      if (brokerRefreshTimer) {
+        clearInterval(brokerRefreshTimer);
+        brokerRefreshTimer = null;
+      }
+
+      if (currentUser.role !== "BROKER") {
+        return;
+      }
+
+      brokerRefreshTimer = setInterval(() => {
+        if (document.body.classList.contains("logged-in")) {
+          loadBoard().catch(() => {});
+        }
+      }, 45000);
     }
 
     async function login(event) {
@@ -1500,6 +1710,10 @@
 
     function logout() {
       localStorage.removeItem("leadvault_user");
+      if (brokerRefreshTimer) {
+        clearInterval(brokerRefreshTimer);
+        brokerRefreshTimer = null;
+      }
       currentUser = { id: 1, username: "root", role: "ROOT" };
       cachedBoard = null;
       document.body.className = "logged-out";
@@ -1647,7 +1861,11 @@
 
     function bindCardOpen() {
       boardEl.querySelectorAll(".card").forEach((card) => {
-        card.addEventListener("click", () => {
+        card.addEventListener("click", (event) => {
+          if (event.target.closest("a")) {
+            return;
+          }
+
           openLeadModal(findLeadInCache(card.dataset.leadId));
         });
       });
@@ -1657,6 +1875,7 @@
       event.preventDefault();
       const leadId = document.getElementById("leadId").value;
       const scoreValue = document.getElementById("leadScore").value;
+      const valueInput = document.getElementById("leadValorNegocio").value.replace(",", ".");
 
       await fetch(`${API_BASE}/leads/${leadId}`, {
         method: "PATCH",
@@ -1673,6 +1892,7 @@
           nicho: document.getElementById("leadNicho").value,
           pais: document.getElementById("leadPais").value,
           score: scoreValue === "" ? null : Number(scoreValue),
+          valor_negocio: valueInput === "" ? 0 : Number(valueInput),
           pipeline: document.getElementById("leadPipeline").value,
           endereco: document.getElementById("leadEndereco").value,
           observacoes: document.getElementById("leadObservacoes").value

@@ -16,6 +16,7 @@ class LeadResponse(BaseModel):
     nicho: str | None = None
     pais: str | None = None
     score: int | None = None
+    valor_negocio: float | None = None
     pipeline: str | None = None
     assigned_to_user_id: int | None = None
 
@@ -46,5 +47,6 @@ class LeadUpdate(BaseModel):
     nicho: str | None = None
     pais: str | None = None
     score: int | None = None
+    valor_negocio: float | None = None
     pipeline: str | None = None
     assigned_to_user_id: int | None = None

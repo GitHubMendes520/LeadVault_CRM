@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.core.security import hash_password
 from app.database.connection import Base, SessionLocal, engine
@@ -35,6 +36,9 @@ def create_database_tables():
 
     db = SessionLocal()
     try:
+        db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS valor_negocio NUMERIC(12, 2) DEFAULT 0"))
+        db.commit()
+
         if db.query(User).count() == 0:
             root_user = User(
                 username=os.getenv("ROOT_USERNAME", "root"),

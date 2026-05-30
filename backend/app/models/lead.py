@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, Numeric, String
 from app.database.connection import Base
 
 class Lead(Base):
@@ -20,6 +20,7 @@ class Lead(Base):
     nicho = Column(String)
     pais = Column(String)
     score = Column(Integer)
+    valor_negocio = Column(Numeric(12, 2), default=0)
 
     pipeline = Column(String, default="NOVO LEAD")
     assigned_to_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
