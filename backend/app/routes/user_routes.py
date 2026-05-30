@@ -117,6 +117,8 @@ def broker_summary(
                 "email_pessoal": broker.email_pessoal,
                 "documento": broker.documento,
                 "observacoes": broker.observacoes,
+                "pais_operacao": broker.pais_operacao,
+                "idioma": broker.idioma,
                 "is_active": broker.is_active,
                 "total_leads": total,
                 "pipeline_counts": counts,
@@ -155,6 +157,8 @@ def create_user(
         email_pessoal=payload.email_pessoal,
         documento=payload.documento,
         observacoes=payload.observacoes,
+        pais_operacao=(payload.pais_operacao or "BR").upper(),
+        idioma=(payload.idioma or "pt").lower(),
         is_active=True,
     )
     db.add(user)
@@ -188,6 +192,12 @@ def update_user(
         if role not in {"ROOT", "GERENTE", "BROKER"}:
             raise HTTPException(status_code=400, detail="Role deve ser ROOT, GERENTE ou BROKER")
         updates["role"] = role
+
+    if "pais_operacao" in updates and updates["pais_operacao"]:
+        updates["pais_operacao"] = updates["pais_operacao"].upper()
+
+    if "idioma" in updates and updates["idioma"]:
+        updates["idioma"] = updates["idioma"].lower()
 
     if "password" in updates:
         password = updates.pop("password")
@@ -229,6 +239,12 @@ def update_own_profile(
 
     for blocked_field in ("role", "is_active", "username"):
         updates.pop(blocked_field, None)
+
+    if "pais_operacao" in updates and updates["pais_operacao"]:
+        updates["pais_operacao"] = updates["pais_operacao"].upper()
+
+    if "idioma" in updates and updates["idioma"]:
+        updates["idioma"] = updates["idioma"].lower()
 
     if "password" in updates:
         password = updates.pop("password")

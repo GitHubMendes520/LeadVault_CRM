@@ -17,6 +17,8 @@ class UserCreate(BaseModel):
     email_pessoal: str | None = None
     documento: str | None = None
     observacoes: str | None = None
+    pais_operacao: str | None = "BR"
+    idioma: str | None = "pt"
 
 
 class UserUpdate(BaseModel):
@@ -30,6 +32,8 @@ class UserUpdate(BaseModel):
     email_pessoal: str | None = None
     documento: str | None = None
     observacoes: str | None = None
+    pais_operacao: str | None = None
+    idioma: str | None = None
     is_active: bool | None = None
 
 
@@ -44,6 +48,8 @@ class UserResponse(BaseModel):
     email_pessoal: str | None = None
     documento: str | None = None
     observacoes: str | None = None
+    pais_operacao: str | None = None
+    idioma: str | None = None
     is_active: bool
 
     model_config = {

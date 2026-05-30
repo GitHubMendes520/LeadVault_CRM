@@ -53,9 +53,13 @@
       gap: 28px;
       padding: 54px;
       background:
-        linear-gradient(135deg, rgba(180, 35, 24, 0.9), rgba(22, 40, 70, 0.94)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+        radial-gradient(circle at 50% 50%, transparent 0 86px, rgba(255,255,255,0.18) 87px 89px, transparent 90px),
+        linear-gradient(135deg, rgba(18, 105, 58, 0.94), rgba(14, 55, 95, 0.95)),
         radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.22), transparent 28%),
-        linear-gradient(135deg, #b42318, #162846);
+        linear-gradient(135deg, #0d7a44, #162846);
+      background-size: 76px 76px, 76px 76px, auto, auto, auto, auto;
       color: #fff;
     }
 
@@ -77,6 +81,20 @@
       font-size: 18px;
       line-height: 1.55;
       margin: 0;
+    }
+
+    .match-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 9px 13px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 18px;
     }
 
     .login-highlights {
@@ -138,7 +156,8 @@
       gap: 12px;
     }
 
-    .login-form input {
+    .login-form input,
+    .login-form select {
       min-height: 48px;
       border: 1px solid #bdc9dc;
       border-radius: 4px;
@@ -866,35 +885,41 @@
     <div class="login-cover">
       <div class="brand">LeadVault</div>
       <div>
-        <h1>Controle comercial para times que vivem de oportunidade.</h1>
-        <p>Distribua leads, acompanhe brokers e gerentes, organize o funil e mantenha cada contato no lugar certo da operação.</p>
+        <div class="match-badge" id="loginBadge">Copa 2026 · Dados B2B em campo</div>
+        <h1 id="loginHeroTitle">Sua seleção comercial entra em campo antes da concorrência.</h1>
+        <p id="loginHeroText">Com o LeadVault, seu time distribui leads por país, idioma e segmento, acompanha cada broker no funil e transforma dados B2B em jogadas de venda.</p>
       </div>
       <div class="login-highlights">
         <div class="login-highlight">
-          <strong>Banco central</strong>
-          <span>Leads importados, filtrados por segmento e país.</span>
+          <strong id="loginHighlightOneTitle">Banco central</strong>
+          <span id="loginHighlightOneText">Leads importados, filtrados por segmento e país.</span>
         </div>
         <div class="login-highlight">
-          <strong>Gestão por perfil</strong>
-          <span>Root, gerentes e brokers com visões separadas.</span>
+          <strong id="loginHighlightTwoTitle">Gestão por perfil</strong>
+          <span id="loginHighlightTwoText">Root, gerentes e brokers com visões separadas.</span>
         </div>
         <div class="login-highlight">
-          <strong>Funil vivo</strong>
-          <span>Status, histórico e edição rápida do contato.</span>
+          <strong id="loginHighlightThreeTitle">Funil vivo</strong>
+          <span id="loginHighlightThreeText">Status, histórico e edição rápida do contato.</span>
         </div>
       </div>
     </div>
     <div class="login-panel">
       <form class="login-card" id="loginForm" autocomplete="off">
         <div class="brand">LeadVault</div>
-        <h1>Entrar no painel</h1>
-        <div class="subtitle">Acesso reservado para usuários autorizados.</div>
+        <h1 id="loginTitle">Entrar no painel</h1>
+        <div class="subtitle" id="loginSubtitle">Acesso reservado para usuários autorizados.</div>
         <div class="login-form">
+          <select id="loginLanguage" title="Idioma">
+            <option value="pt">Português · Brasil</option>
+            <option value="en">English · UK/EUA</option>
+            <option value="es">Español · México</option>
+          </select>
           <input id="loginUser" placeholder="Usuário" autocomplete="off" autocapitalize="none" spellcheck="false">
           <input id="loginPassword" placeholder="Senha" type="password" autocomplete="off">
-          <button type="submit">Entrar</button>
+          <button id="loginButton" type="submit">Entrar</button>
         </div>
-        <div class="login-security-note">Use as credenciais recebidas pelo administrador da operação.</div>
+        <div class="login-security-note" id="loginNote">Use as credenciais recebidas pelo administrador da operação.</div>
       </form>
     </div>
   </section>
@@ -1032,6 +1057,17 @@
         <div class="inline-form">
           <input id="newBrokerUser" placeholder="usuario">
           <input id="newBrokerPassword" value="12345m*" placeholder="senha inicial">
+          <select id="newBrokerCountry">
+            <option value="BR">Brasil</option>
+            <option value="MX">México</option>
+            <option value="UK">UK · Londres</option>
+            <option value="US">EUA</option>
+          </select>
+          <select id="newBrokerLanguage">
+            <option value="pt">Português</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
           <select id="newBrokerRole" class="root-only">
             <option value="BROKER">Broker</option>
             <option value="GERENTE">Gerente</option>
@@ -1157,6 +1193,23 @@
           </select>
         </label>
         <label class="modal-field">
+          País de operação
+          <select id="editUserCountry">
+            <option value="BR">Brasil</option>
+            <option value="MX">México</option>
+            <option value="UK">UK · Londres</option>
+            <option value="US">EUA</option>
+          </select>
+        </label>
+        <label class="modal-field">
+          Idioma da tela
+          <select id="editUserLanguage">
+            <option value="pt">Português</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+        </label>
+        <label class="modal-field">
           Nova senha
           <input id="editUserPassword" type="password" placeholder="manter atual">
         </label>
@@ -1218,6 +1271,266 @@
       "PERDIDO": "Perdido"
     };
 
+    const translations = {
+      pt: {
+        locale: "pt-BR",
+        currency: "BRL",
+        loginBadge: "Copa 2026 · Dados B2B em campo",
+        loginHeroTitle: "Sua seleção comercial entra em campo antes da concorrência.",
+        loginHeroText: "Com o LeadVault, seu time distribui leads por país, idioma e segmento, acompanha cada broker no funil e transforma dados B2B em jogadas de venda.",
+        loginHighlightOneTitle: "Banco central",
+        loginHighlightOneText: "Leads importados, filtrados por segmento e país.",
+        loginHighlightTwoTitle: "Gestão por perfil",
+        loginHighlightTwoText: "Root, gerentes e brokers com visões separadas.",
+        loginHighlightThreeTitle: "Funil vivo",
+        loginHighlightThreeText: "Status, histórico e edição rápida do contato.",
+        loginTitle: "Entrar no painel",
+        loginSubtitle: "Acesso reservado para usuários autorizados.",
+        loginUserPlaceholder: "Usuário",
+        loginPasswordPlaceholder: "Senha",
+        loginButton: "Entrar",
+        loginNote: "Use as credenciais recebidas pelo administrador da operação.",
+        nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Usuários"],
+        logout: "Sair",
+        funnelTitle: "Funil de Vendas",
+        loadingLeads: "Carregando leads...",
+        totalText: (total) => `Encontramos ${total} registros carregados no funil.`,
+        searchPlaceholder: "Buscar cliente",
+        filterButton: "Filtrar Dados",
+        sendBroker: "Enviar ao Broker",
+        profileTitle: "Meu perfil",
+        editProfile: "Editar perfil",
+        distributeTitle: "Distribuir por segmento e país",
+        selectBroker: "Selecione broker",
+        allBrokers: "Todos os brokers",
+        allSegments: "Todos os segmentos",
+        allCountries: "Todos os países",
+        sendFiltered: "Enviar leads filtrados",
+        refreshStock: "Atualizar estoque",
+        freeFilter: "Leads livres neste filtro:",
+        totalBank: "Total livre no banco:",
+        returnTitle: "Voltar leads ao banco",
+        segmentPlaceholder: "Segmento / nicho",
+        countryPlaceholder: "País",
+        all: "Todos",
+        returnBank: "Voltar ao banco",
+        createUserTitle: "Cadastrar usuário autorizado",
+        usersTitle: "Gerentes e brokers",
+        register: "Cadastrar",
+        userPlaceholder: "usuario",
+        passwordPlaceholder: "senha inicial",
+        bankTitle: "Banco de leads",
+        freeLeads: "Leads livres",
+        segments: "Segmentos",
+        countries: "Países",
+        combinations: "Combinações",
+        stockBySegment: "Estoque por segmento",
+        attendanceHelp: "Use o funil para abrir o card, editar contato e mover etapas. Esta aba vai receber fila de tarefas, chamadas e follow-up.",
+        activeBrokers: "Brokers ativos",
+        assignedLeads: "Leads distribuídos",
+        inBank: "No banco",
+        wonDeals: "Venda ganha",
+        emptyStage: "Nenhum Cliente nessa Etapa!",
+        status: "Status",
+        score: "Score",
+        deal: "Negócio",
+        contactMissing: "Contato nao informado",
+        emailMissing: "Email nao informado",
+        siteMissing: "Site nao informado",
+        countryMissing: "País não informado",
+        languageMissing: "Idioma a confirmar",
+        whatsapp: "WhatsApp",
+        call: "Ligar",
+        contact: "Contato",
+        leads: "leads",
+        noLeadsForFilter: "Nao ha leads livres para esse segmento/pais",
+        selectBrokerAlert: "Selecione um broker antes de enviar leads",
+        invalidQty: "Informe uma quantidade valida a partir de 1",
+        loginInvalid: "Login invalido",
+        newLeadToast: (diff) => `Você recebeu ${diff} novo${diff > 1 ? "s" : ""} lead${diff > 1 ? "s" : ""}.`,
+        stages: stageLabels
+      },
+      en: {
+        locale: "en-US",
+        currency: "USD",
+        loginBadge: "2026 Cup · B2B data on the field",
+        loginHeroTitle: "Put your sales squad on the pitch before the competition.",
+        loginHeroText: "LeadVault distributes leads by country, language, and segment, tracks every broker in the pipeline, and turns B2B data into sales plays.",
+        loginHighlightOneTitle: "Central database",
+        loginHighlightOneText: "Imported leads filtered by segment and country.",
+        loginHighlightTwoTitle: "Role control",
+        loginHighlightTwoText: "Root, managers, and brokers with separate views.",
+        loginHighlightThreeTitle: "Live pipeline",
+        loginHighlightThreeText: "Status, history, and fast contact editing.",
+        loginTitle: "Sign in",
+        loginSubtitle: "Reserved access for authorized users.",
+        loginUserPlaceholder: "User",
+        loginPasswordPlaceholder: "Password",
+        loginButton: "Sign in",
+        loginNote: "Use the credentials provided by your operation administrator.",
+        nav: ["Sales", "Leads", "Service", "Reports", "Users"],
+        logout: "Sign out",
+        funnelTitle: "Sales Pipeline",
+        loadingLeads: "Loading leads...",
+        totalText: (total) => `${total} records loaded in the pipeline.`,
+        searchPlaceholder: "Search client",
+        filterButton: "Filter Data",
+        sendBroker: "Send to Broker",
+        profileTitle: "My profile",
+        editProfile: "Edit profile",
+        distributeTitle: "Distribute by segment and country",
+        selectBroker: "Select broker",
+        allBrokers: "All brokers",
+        allSegments: "All segments",
+        allCountries: "All countries",
+        sendFiltered: "Send filtered leads",
+        refreshStock: "Refresh stock",
+        freeFilter: "Free leads in this filter:",
+        totalBank: "Total free in database:",
+        returnTitle: "Return leads to database",
+        segmentPlaceholder: "Segment / niche",
+        countryPlaceholder: "Country",
+        all: "All",
+        returnBank: "Return to database",
+        createUserTitle: "Create authorized user",
+        usersTitle: "Managers and brokers",
+        register: "Create",
+        userPlaceholder: "user",
+        passwordPlaceholder: "initial password",
+        bankTitle: "Lead database",
+        freeLeads: "Free leads",
+        segments: "Segments",
+        countries: "Countries",
+        combinations: "Combinations",
+        stockBySegment: "Stock by segment",
+        attendanceHelp: "Use the pipeline to open a card, edit the contact, and move stages. This tab will receive tasks, calls, and follow-ups.",
+        activeBrokers: "Active brokers",
+        assignedLeads: "Assigned leads",
+        inBank: "In database",
+        wonDeals: "Won deals",
+        emptyStage: "No client in this stage.",
+        status: "Status",
+        score: "Score",
+        deal: "Deal",
+        contactMissing: "Contact not informed",
+        emailMissing: "Email not informed",
+        siteMissing: "Site not informed",
+        countryMissing: "Country not informed",
+        languageMissing: "Language to confirm",
+        whatsapp: "WhatsApp",
+        call: "Call",
+        contact: "Contact",
+        leads: "leads",
+        noLeadsForFilter: "No free leads for this segment/country",
+        selectBrokerAlert: "Select a broker before sending leads",
+        invalidQty: "Enter a valid quantity starting at 1",
+        loginInvalid: "Invalid login",
+        newLeadToast: (diff) => `You received ${diff} new lead${diff > 1 ? "s" : ""}.`,
+        stages: {
+          "NOVO LEAD": "Waiting Service",
+          "ATENDIMENTO": "Service",
+          "TENTATIVA DE CONTATO": "1st Attempt",
+          "VISITA": "Visit",
+          "MONTAGEM DE PASTA": "File Assembly",
+          "VENDA GANHA": "Won Deal",
+          "PERDIDO": "Lost"
+        }
+      },
+      es: {
+        locale: "es-MX",
+        currency: "MXN",
+        loginBadge: "Copa 2026 · Datos B2B en la cancha",
+        loginHeroTitle: "Tu selección comercial entra al campo antes que la competencia.",
+        loginHeroText: "LeadVault distribuye leads por país, idioma y segmento, acompaña cada broker en el embudo y convierte datos B2B en jugadas de venta.",
+        loginHighlightOneTitle: "Banco central",
+        loginHighlightOneText: "Leads importados y filtrados por segmento y país.",
+        loginHighlightTwoTitle: "Gestión por perfil",
+        loginHighlightTwoText: "Root, gerentes y brokers con vistas separadas.",
+        loginHighlightThreeTitle: "Embudo vivo",
+        loginHighlightThreeText: "Estado, historial y edición rápida del contacto.",
+        loginTitle: "Entrar al panel",
+        loginSubtitle: "Acceso reservado para usuarios autorizados.",
+        loginUserPlaceholder: "Usuario",
+        loginPasswordPlaceholder: "Contraseña",
+        loginButton: "Entrar",
+        loginNote: "Usa las credenciales recibidas por el administrador de la operación.",
+        nav: ["Ventas", "Leads", "Atención", "Reportes", "Usuarios"],
+        logout: "Salir",
+        funnelTitle: "Embudo de Ventas",
+        loadingLeads: "Cargando leads...",
+        totalText: (total) => `Encontramos ${total} registros cargados en el embudo.`,
+        searchPlaceholder: "Buscar cliente",
+        filterButton: "Filtrar Datos",
+        sendBroker: "Enviar al Broker",
+        profileTitle: "Mi perfil",
+        editProfile: "Editar perfil",
+        distributeTitle: "Distribuir por segmento y país",
+        selectBroker: "Seleccione broker",
+        allBrokers: "Todos los brokers",
+        allSegments: "Todos los segmentos",
+        allCountries: "Todos los países",
+        sendFiltered: "Enviar leads filtrados",
+        refreshStock: "Actualizar stock",
+        freeFilter: "Leads libres en este filtro:",
+        totalBank: "Total libre en el banco:",
+        returnTitle: "Volver leads al banco",
+        segmentPlaceholder: "Segmento / nicho",
+        countryPlaceholder: "País",
+        all: "Todos",
+        returnBank: "Volver al banco",
+        createUserTitle: "Registrar usuario autorizado",
+        usersTitle: "Gerentes y brokers",
+        register: "Registrar",
+        userPlaceholder: "usuario",
+        passwordPlaceholder: "contraseña inicial",
+        bankTitle: "Banco de leads",
+        freeLeads: "Leads libres",
+        segments: "Segmentos",
+        countries: "Países",
+        combinations: "Combinaciones",
+        stockBySegment: "Stock por segmento",
+        attendanceHelp: "Usa el embudo para abrir la tarjeta, editar el contacto y mover etapas. Esta pestaña recibirá tareas, llamadas y seguimiento.",
+        activeBrokers: "Brokers activos",
+        assignedLeads: "Leads distribuidos",
+        inBank: "En el banco",
+        wonDeals: "Venta ganada",
+        emptyStage: "No hay cliente en esta etapa.",
+        status: "Estado",
+        score: "Score",
+        deal: "Negocio",
+        contactMissing: "Contacto no informado",
+        emailMissing: "Email no informado",
+        siteMissing: "Sitio no informado",
+        countryMissing: "País no informado",
+        languageMissing: "Idioma por confirmar",
+        whatsapp: "WhatsApp",
+        call: "Llamar",
+        contact: "Contacto",
+        leads: "leads",
+        noLeadsForFilter: "No hay leads libres para este segmento/país",
+        selectBrokerAlert: "Seleccione un broker antes de enviar leads",
+        invalidQty: "Informe una cantidad válida desde 1",
+        loginInvalid: "Login inválido",
+        newLeadToast: (diff) => `Recibiste ${diff} lead${diff > 1 ? "s" : ""} nuevo${diff > 1 ? "s" : ""}.`,
+        stages: {
+          "NOVO LEAD": "Esperando Atención",
+          "ATENDIMENTO": "Atención",
+          "TENTATIVA DE CONTATO": "1er Intento",
+          "VISITA": "Visita",
+          "MONTAGEM DE PASTA": "Armado de Carpeta",
+          "VENDA GANHA": "Venta Ganada",
+          "PERDIDO": "Perdido"
+        }
+      }
+    };
+
+    const userCountries = {
+      BR: { label: "Brasil", language: "pt" },
+      MX: { label: "México", language: "es" },
+      UK: { label: "UK · Londres", language: "en" },
+      US: { label: "EUA", language: "en" }
+    };
+
     const countryProfiles = {
       MX: { flag: "🇲🇽", label: "México", language: "Espanhol" },
       MEXICO: { flag: "🇲🇽", label: "México", language: "Espanhol" },
@@ -1246,10 +1559,33 @@
     let currentUser = { id: 1, username: "root", role: "ROOT" };
     let cachedBoard = null;
     let brokerRefreshTimer = null;
+    let currentLanguage = localStorage.getItem("leadvault_language") || "pt";
 
-    leadPipeline.innerHTML = stages.map((stage) => {
-      return `<option value="${stage}">${stageLabels[stage]}</option>`;
-    }).join("");
+    function t(key) {
+      return (translations[currentLanguage] || translations.pt)[key] ?? translations.pt[key] ?? key;
+    }
+
+    function stageLabel(stage) {
+      const labels = t("stages");
+      return labels[stage] || stageLabels[stage] || stage;
+    }
+
+    function countryLanguageName(language) {
+      const names = {
+        pt: { pt: "Português", en: "Portuguese", es: "Portugués" },
+        en: { pt: "Inglês", en: "English", es: "Inglés" },
+        es: { pt: "Espanhol", en: "Spanish", es: "Español" }
+      };
+      return names[language]?.[currentLanguage] || language;
+    }
+
+    function renderPipelineOptions() {
+      leadPipeline.innerHTML = stages.map((stage) => {
+        return `<option value="${stage}">${stageLabel(stage)}</option>`;
+      }).join("");
+    }
+
+    renderPipelineOptions();
 
     function money() {
       return formatCurrency(0);
@@ -1262,18 +1598,31 @@
     }
 
     function formatCurrency(value) {
-      return new Intl.NumberFormat("pt-BR", {
+      const config = translations[currentLanguage] || translations.pt;
+      return new Intl.NumberFormat(config.locale, {
         style: "currency",
-        currency: "BRL"
+        currency: config.currency
       }).format(Number(value || 0));
     }
 
     function countryInfo(pais) {
       const key = String(pais || "").trim().toUpperCase();
-      return countryProfiles[key] || {
+      const profile = countryProfiles[key];
+      if (profile) {
+        const languageKey = ["MX", "MEXICO"].includes(key)
+          ? "es"
+          : ["BR", "BRASIL", "BRAZIL"].includes(key)
+            ? "pt"
+            : "en";
+        return {
+          ...profile,
+          language: countryLanguageName(languageKey)
+        };
+      }
+      return {
         flag: "🌐",
-        label: pais || "País não informado",
-        language: "Idioma a confirmar"
+        label: pais || t("countryMissing"),
+        language: t("languageMissing")
       };
     }
 
@@ -1322,12 +1671,12 @@
       const actions = [];
 
       if (whats) {
-        actions.push(`<a href="https://wa.me/${whats}" target="_blank" rel="noopener">WhatsApp</a>`);
+        actions.push(`<a href="https://wa.me/${whats}" target="_blank" rel="noopener">${t("whatsapp")}</a>`);
       }
 
       if (phone) {
-        actions.push(`<a href="tel:${phone}">Ligar</a>`);
-        actions.push(`<a href="data:text/vcard;charset=utf-8,BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3A${encodeURIComponent(lead.nome || "Lead LeadVault")}%0ATEL%3A${phone}%0AEMAIL%3A${encodeURIComponent(lead.email || "")}%0AEND%3AVCARD" download="${escapeHtml((lead.nome || "lead").replace(/[^a-z0-9]+/gi, "-"))}.vcf">Contato</a>`);
+        actions.push(`<a href="tel:${phone}">${t("call")}</a>`);
+        actions.push(`<a href="data:text/vcard;charset=utf-8,BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3A${encodeURIComponent(lead.nome || "Lead LeadVault")}%0ATEL%3A${phone}%0AEMAIL%3A${encodeURIComponent(lead.email || "")}%0AEND%3AVCARD" download="${escapeHtml((lead.nome || "lead").replace(/[^a-z0-9]+/gi, "-"))}.vcf">${t("contact")}</a>`);
       }
 
       return actions.length ? `<div class="contact-actions">${actions.join("")}</div>` : "";
@@ -1344,12 +1693,110 @@
       document.body.classList.add(`view-${viewName}`);
     }
 
+    function setText(selector, value) {
+      const element = document.querySelector(selector);
+      if (element) {
+        element.textContent = value;
+      }
+    }
+
+    function setPlaceholder(selector, value) {
+      const element = document.querySelector(selector);
+      if (element) {
+        element.placeholder = value;
+      }
+    }
+
+    function applyLanguage(language) {
+      currentLanguage = translations[language] ? language : "pt";
+      localStorage.setItem("leadvault_language", currentLanguage);
+      document.documentElement.lang = currentLanguage === "pt" ? "pt-BR" : currentLanguage === "es" ? "es-MX" : "en";
+
+      const loginLanguage = document.getElementById("loginLanguage");
+      if (loginLanguage) {
+        loginLanguage.value = currentLanguage;
+      }
+
+      setText("#loginBadge", t("loginBadge"));
+      setText("#loginHeroTitle", t("loginHeroTitle"));
+      setText("#loginHeroText", t("loginHeroText"));
+      setText("#loginHighlightOneTitle", t("loginHighlightOneTitle"));
+      setText("#loginHighlightOneText", t("loginHighlightOneText"));
+      setText("#loginHighlightTwoTitle", t("loginHighlightTwoTitle"));
+      setText("#loginHighlightTwoText", t("loginHighlightTwoText"));
+      setText("#loginHighlightThreeTitle", t("loginHighlightThreeTitle"));
+      setText("#loginHighlightThreeText", t("loginHighlightThreeText"));
+      setText("#loginTitle", t("loginTitle"));
+      setText("#loginSubtitle", t("loginSubtitle"));
+      setText("#loginButton", t("loginButton"));
+      setText("#loginNote", t("loginNote"));
+      setPlaceholder("#loginUser", t("loginUserPlaceholder"));
+      setPlaceholder("#loginPassword", t("loginPasswordPlaceholder"));
+
+      document.querySelectorAll(".nav button[data-view-target]").forEach((button, index) => {
+        button.textContent = t("nav")[index] || button.textContent;
+      });
+      setText("#logoutButton", t("logout"));
+      setText(".toolbar h1", t("funnelTitle"));
+      setPlaceholder("#searchInput", t("searchPlaceholder"));
+      setText("#reloadButton", t("filterButton"));
+      setText("#seedBrokerButton", t("sendBroker"));
+      setText("#editMyProfileButton", t("editProfile"));
+      setText("#assignSmartButton", t("sendFiltered"));
+      setText("#refreshInventoryButton", t("refreshStock"));
+      setText("#returnBulkButton", t("returnBank"));
+      setText("#createBrokerButton", t("register"));
+      setPlaceholder("#newBrokerUser", t("userPlaceholder"));
+      setPlaceholder("#newBrokerPassword", t("passwordPlaceholder"));
+      setPlaceholder("#returnSegment", t("segmentPlaceholder"));
+      setPlaceholder("#returnCountry", t("countryPlaceholder"));
+
+      const panels = document.querySelectorAll(".panel-title");
+      [
+        t("profileTitle"),
+        t("distributeTitle"),
+        t("returnTitle"),
+        t("bankTitle"),
+        t("stockBySegment"),
+        t("nav")[2],
+        t("nav")[3],
+        t("createUserTitle"),
+        t("usersTitle")
+      ].forEach((label, index) => {
+        if (panels[index]) {
+          panels[index].textContent = label;
+        }
+      });
+
+      [t("freeLeads"), t("segments"), t("countries"), t("combinations")].forEach((label, index) => {
+        const metric = document.querySelectorAll("#view-leads .metric")[index];
+        if (metric?.firstChild) {
+          metric.firstChild.nodeValue = label;
+        }
+      });
+      [t("activeBrokers"), t("assignedLeads"), t("inBank"), t("wonDeals")].forEach((label, index) => {
+        const metric = document.querySelectorAll("#view-relatorios .metric")[index];
+        if (metric?.firstChild) {
+          metric.firstChild.nodeValue = label;
+        }
+      });
+
+      document.querySelector("#view-atendimento .line").textContent = t("attendanceHelp");
+      renderPipelineOptions();
+      if (cachedBoard) {
+        renderBoard(cachedBoard);
+      }
+      if (cachedInventory) {
+        loadInventory().catch(() => {});
+      }
+    }
+
     function cardTemplate(lead) {
       const title = lead.nome || "Lead sem nome";
       const niche = [lead.nicho, lead.pais].filter(Boolean).join(" · ") || "SEM CLASSIFICACAO";
-      const contact = lead.contato || "Contato nao informado";
-      const email = lead.email || "Email nao informado";
-      const site = lead.site || "Site nao informado";
+      const contact = lead.contato || t("contactMissing");
+      const email = lead.email || t("emailMissing");
+      const site = lead.site || t("siteMissing");
       const country = countryInfo(lead.pais);
       const value = Number(lead.valor_negocio || 0);
       const stageClass = `stage-${(lead.pipeline || "NOVO LEAD").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
@@ -1365,9 +1812,9 @@
           </div>
           <div class="card-meta">${escapeHtml(niche)}</div>
           <div class="lead-country"><span class="flag">${country.flag}</span>${escapeHtml(country.label)} · ${escapeHtml(country.language)}</div>
-          <div class="status">Status: <span>${escapeHtml(stageLabels[lead.pipeline] || lead.pipeline)}</span></div>
-          <div class="status">Score: <span>${lead.score ?? 0}</span></div>
-          <div class="deal-value">Negócio: ${formatCurrency(value)}</div>
+          <div class="status">${t("status")}: <span>${escapeHtml(stageLabel(lead.pipeline))}</span></div>
+          <div class="status">${t("score")}: <span>${lead.score ?? 0}</span></div>
+          <div class="deal-value">${t("deal")}: ${formatCurrency(value)}</div>
           <div class="divider"></div>
           <div class="line"><strong>☎</strong>${escapeHtml(contact)}</div>
           <div class="line"><strong>✉</strong>${escapeHtml(email)}</div>
@@ -1430,6 +1877,8 @@
       document.getElementById("editUsername").value = user.username || "";
       document.getElementById("editFullName").value = user.full_name || "";
       document.getElementById("editUserRole").value = user.role || "BROKER";
+      document.getElementById("editUserCountry").value = user.pais_operacao || "BR";
+      document.getElementById("editUserLanguage").value = user.idioma || "pt";
       document.getElementById("editUserPassword").value = "";
       document.getElementById("editCreci").value = user.creci || "";
       document.getElementById("editDataNascimento").value = user.data_nascimento || "";
@@ -1482,7 +1931,7 @@
 
       if (previousValue !== null && total > Number(previousValue)) {
         const diff = total - Number(previousValue);
-        showBrokerToast(`Você recebeu ${diff} novo${diff > 1 ? "s" : ""} lead${diff > 1 ? "s" : ""}.`);
+        showBrokerToast(t("newLeadToast")(diff));
       }
 
       localStorage.setItem(key, String(total));
@@ -1509,19 +1958,19 @@
           <section class="column" data-stage="${stage}">
             <div class="column-header">
               <div class="column-title">
-                ${stageLabels[stage]}
+                ${stageLabel(stage)}
                 <span class="count">${leads.length}</span>
               </div>
               <div class="value">${formatCurrency(stageValue)}</div>
             </div>
             <div class="cards">
-              ${leads.length ? leads.map(cardTemplate).join("") : '<div class="empty">Nenhum Cliente nessa Etapa!</div>'}
+              ${leads.length ? leads.map(cardTemplate).join("") : `<div class="empty">${t("emptyStage")}</div>`}
             </div>
           </section>
         `;
       }).join("");
 
-      totalText.textContent = `Encontramos ${total} registros carregados no funil.`;
+      totalText.textContent = t("totalText")(total);
       notifyBrokerAboutNewLeads(total);
       bindDragAndDrop();
       bindCardOpen();
@@ -1555,6 +2004,8 @@
 
       document.getElementById("assignAvailableCount").textContent = available;
       document.getElementById("assignTotalFree").textContent = cachedInventory.total_livre || 0;
+      document.querySelector(".inventory-meter span:first-child").innerHTML = `${t("freeFilter")} <strong id="assignAvailableCount">${available}</strong>`;
+      document.querySelector(".inventory-meter span:last-child").innerHTML = `${t("totalBank")} <strong id="assignTotalFree">${cachedInventory.total_livre || 0}</strong>`;
 
       const quantity = Number(document.getElementById("assignQuantity").value);
       document.getElementById("assignSmartButton").disabled = available <= 0 || !Number.isInteger(quantity) || quantity < 1;
@@ -1567,10 +2018,10 @@
       }
 
       cachedInventory = await response.json();
-      document.getElementById("assignSegment").innerHTML = '<option value="">Todos os segmentos</option>' + cachedInventory.nichos.map((item) => {
+      document.getElementById("assignSegment").innerHTML = `<option value="">${t("allSegments")}</option>` + cachedInventory.nichos.map((item) => {
         return `<option value="${item.nome}">${item.nome} (${item.total})</option>`;
       }).join("");
-      document.getElementById("assignCountry").innerHTML = '<option value="">Todos os países</option>' + cachedInventory.paises.map((item) => {
+      document.getElementById("assignCountry").innerHTML = `<option value="">${t("allCountries")}</option>` + cachedInventory.paises.map((item) => {
         const country = countryInfo(item.nome);
         return `<option value="${item.nome}">${country.flag} ${country.label} · ${country.language} (${item.total})</option>`;
       }).join("");
@@ -1583,7 +2034,7 @@
         return `
           <div class="broker-row">
             <span>${item.nome}</span>
-            <span class="small-badge">${item.total} livres</span>
+            <span class="small-badge">${item.total} ${t("leads")}</span>
           </div>
         `;
       }).join("");
@@ -1598,18 +2049,18 @@
       const pais = document.getElementById("assignCountry").value.trim();
 
       if (!brokerId) {
-        alert("Selecione um broker antes de enviar leads");
+        alert(t("selectBrokerAlert"));
         return;
       }
 
       if (!Number.isInteger(quantity) || quantity < 1) {
-        alert("Informe uma quantidade valida a partir de 1");
+        alert(t("invalidQty"));
         return;
       }
 
       const available = Number(document.getElementById("assignAvailableCount").textContent || 0);
       if (available <= 0) {
-        alert("Nao ha leads livres para esse segmento/pais");
+        alert(t("noLeadsForFilter"));
         return;
       }
 
@@ -1628,7 +2079,7 @@
         })
       });
       const result = await response.json();
-      alert(`${result.leads_enviados} leads enviados para ${result.broker}`);
+      alert(`${result.leads_enviados} ${t("leads")} -> ${result.broker}`);
       brokerFilter.value = brokerId;
       await loadBrokers();
       await loadInventory();
@@ -1663,8 +2114,12 @@
     }
 
     async function enterDashboard(user) {
-      currentUser = user;
-      localStorage.setItem("leadvault_user", JSON.stringify(user));
+      currentUser = {
+        ...user,
+        idioma: user.idioma || currentLanguage
+      };
+      applyLanguage(currentUser.idioma);
+      localStorage.setItem("leadvault_user", JSON.stringify(currentUser));
       applyUserMode();
       showView("vendas");
       await loadBrokers();
@@ -1701,7 +2156,7 @@
       });
 
       if (!response.ok) {
-        alert("Login invalido");
+        alert(t("loginInvalid"));
         return;
       }
 
@@ -1721,12 +2176,23 @@
       totalText.textContent = "Carregando leads...";
       document.getElementById("loginUser").value = "";
       document.getElementById("loginPassword").value = "";
+      applyLanguage(currentLanguage);
+    }
+
+    function syncLanguageFromCountry(countrySelectId, languageSelectId) {
+      const country = document.getElementById(countrySelectId).value;
+      const profile = userCountries[country];
+      if (profile) {
+        document.getElementById(languageSelectId).value = profile.language;
+      }
     }
 
     async function createBroker() {
       const username = document.getElementById("newBrokerUser").value.trim();
       const password = document.getElementById("newBrokerPassword").value;
       const role = document.getElementById("newBrokerRole").value;
+      const paisOperacao = document.getElementById("newBrokerCountry").value;
+      const idioma = document.getElementById("newBrokerLanguage").value;
 
       if (!username || !password) {
         alert("Informe usuario e senha do broker");
@@ -1744,7 +2210,9 @@
           username,
           password,
           role,
-          full_name: username
+          full_name: username,
+          pais_operacao: paisOperacao,
+          idioma
         })
       });
 
@@ -1780,14 +2248,14 @@
         document.getElementById("metricBank").textContent = cachedInventory.total_livre || 0;
       }
       const currentValue = brokerFilter.value;
-      brokerFilter.innerHTML = '<option value="">Todos os brokers</option>' + brokers.map((broker) => {
+      brokerFilter.innerHTML = `<option value="">${t("allBrokers")}</option>` + brokers.map((broker) => {
         return `<option value="${broker.id}">${broker.username}</option>`;
       }).join("");
-      document.getElementById("assignBroker").innerHTML = '<option value="">Selecione broker</option>' + brokers.map((broker) => {
+      document.getElementById("assignBroker").innerHTML = `<option value="">${t("selectBroker")}</option>` + brokers.map((broker) => {
         return `<option value="${broker.id}">${broker.username}</option>`;
       }).join("");
       brokerFilter.value = currentUser.role === "BROKER" ? String(currentUser.id) : currentValue;
-      document.getElementById("returnBroker").innerHTML = '<option value="">Todos os brokers</option>' + brokers.map((broker) => {
+      document.getElementById("returnBroker").innerHTML = `<option value="">${t("allBrokers")}</option>` + brokers.map((broker) => {
         return `<option value="${broker.id}">${broker.username}</option>`;
       }).join("");
       document.getElementById("leadBrokerTarget").innerHTML = '<option value="">Sem broker / banco</option>' + brokers.map((broker) => {
@@ -1796,11 +2264,12 @@
 
       brokerList.innerHTML = brokers.map((broker) => {
         const counts = broker.pipeline_counts || {};
-        const detalhe = Object.entries(counts).map(([stage, count]) => `${stage}: ${count}`).join(" | ") || "sem leads";
+        const detalhe = Object.entries(counts).map(([stage, count]) => `${stageLabel(stage)}: ${count}`).join(" | ") || "sem leads";
+        const country = userCountries[broker.pais_operacao || "BR"] || userCountries.BR;
         return `
           <div class="broker-row">
-            <span>${broker.username}</span>
-            <span class="small-badge">${broker.total_leads} leads</span>
+            <span>${broker.username}<br><small>${country.label} · ${countryLanguageName(broker.idioma || country.language)}</small></span>
+            <span class="small-badge">${broker.total_leads} ${t("leads")}</span>
             <button class="ghost" data-broker-id="${broker.id}">Ver</button>
             <button class="ghost" data-edit-user-id="${broker.id}">Editar</button>
             <span style="grid-column: 1 / -1; color:#64748b; font-size:13px;">${detalhe}</span>
@@ -1917,7 +2386,9 @@
         telefone: document.getElementById("editTelefone").value,
         email_pessoal: document.getElementById("editEmailPessoal").value,
         documento: document.getElementById("editDocumento").value,
-        observacoes: document.getElementById("editUserObservacoes").value
+        observacoes: document.getElementById("editUserObservacoes").value,
+        pais_operacao: document.getElementById("editUserCountry").value,
+        idioma: document.getElementById("editUserLanguage").value
       };
 
       if (currentUser.role === "ROOT" && !editingOwnProfile) {
@@ -1950,6 +2421,8 @@
       if (editingOwnProfile) {
         const updatedUser = await response.json();
         currentUser = updatedUser;
+        applyLanguage(currentUser.idioma || currentLanguage);
+        localStorage.setItem("leadvault_user", JSON.stringify(currentUser));
         sessionUser.innerHTML = `${currentUser.username} <span>${currentUser.role}</span>`;
         refreshProfileBox();
         closeUserModal();
@@ -2117,6 +2590,15 @@
       document.getElementById("leadSendQuantity").value = event.target.value;
       updateInventoryCount();
     });
+    document.getElementById("loginLanguage").addEventListener("change", (event) => {
+      applyLanguage(event.target.value);
+    });
+    document.getElementById("newBrokerCountry").addEventListener("change", () => {
+      syncLanguageFromCountry("newBrokerCountry", "newBrokerLanguage");
+    });
+    document.getElementById("editUserCountry").addEventListener("change", () => {
+      syncLanguageFromCountry("editUserCountry", "editUserLanguage");
+    });
     document.getElementById("deleteLeadButton").addEventListener("click", deleteLead);
     document.getElementById("deleteUserButton").addEventListener("click", deleteUser);
     document.querySelectorAll(".nav button[data-view-target]").forEach((button) => {
@@ -2146,6 +2628,8 @@
         renderBoard(cachedBoard);
       }
     });
+
+    applyLanguage(currentLanguage);
 
     const savedUser = localStorage.getItem("leadvault_user");
     if (savedUser) {

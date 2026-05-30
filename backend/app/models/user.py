@@ -17,4 +17,6 @@ class User(Base):
     email_pessoal = Column(String)
     documento = Column(String)
     observacoes = Column(String)
+    pais_operacao = Column(String, default="BR")
+    idioma = Column(String, default="pt")
     is_active = Column(Boolean, default=True)

@@ -37,6 +37,8 @@ def create_database_tables():
     db = SessionLocal()
     try:
         db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS valor_negocio NUMERIC(12, 2) DEFAULT 0"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS pais_operacao VARCHAR DEFAULT 'BR'"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS idioma VARCHAR DEFAULT 'pt'"))
         db.commit()
 
         if db.query(User).count() == 0:
