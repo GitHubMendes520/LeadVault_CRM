@@ -62,6 +62,21 @@ def require_root_actor(
     return actor
 
 
+def manager_team_broker_ids(db: Session, manager_id: int):
+    return [
+        broker_id
+        for (broker_id,) in (
+            db.query(User.id)
+            .filter(
+                User.role == "BROKER",
+                User.manager_id == manager_id,
+                User.is_active.is_(True),
+            )
+            .all()
+        )
+    ]
+
+
 @router.post("/login", response_model=UserResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == payload.username).first()
@@ -116,22 +131,28 @@ def mark_logout(
 @router.get("/", response_model=list[UserResponse])
 def list_users(
     db: Session = Depends(get_db),
-    _: User | None = Depends(require_admin_actor),
+    actor: User | None = Depends(require_admin_actor),
 ):
-    return db.query(User).order_by(User.id).all()
+    query = db.query(User)
+    if actor and actor.role == "GERENTE":
+        query = query.filter(User.role == "BROKER", User.manager_id == actor.id)
+
+    return query.order_by(User.id).all()
 
 
 @router.get("/brokers/summary")
 def broker_summary(
     db: Session = Depends(get_db),
-    _: User | None = Depends(require_admin_actor),
+    actor: User | None = Depends(require_admin_actor),
 ):
-    brokers = (
-        db.query(User)
-        .filter(User.role.in_(["GERENTE", "BROKER"]))
-        .order_by(User.id)
-        .all()
-    )
+    query = db.query(User)
+
+    if actor and actor.role == "GERENTE":
+        query = query.filter(User.role == "BROKER", User.manager_id == actor.id)
+    else:
+        query = query.filter(User.role.in_(["GERENTE", "BROKER"]))
+
+    brokers = query.order_by(User.role.desc(), User.id).all()
 
     summary = []
     for broker in brokers:
@@ -147,6 +168,7 @@ def broker_summary(
         summary.append(
             {
                 "id": broker.id,
+                "manager_id": broker.manager_id,
                 "username": broker.username,
                 "full_name": broker.full_name,
                 "role": broker.role,
@@ -183,11 +205,27 @@ def create_user(
     if actor and actor.role == "GERENTE" and role != "BROKER":
         raise HTTPException(status_code=403, detail="Gerente pode cadastrar apenas broker")
 
+    manager_id = payload.manager_id
+    if role == "BROKER":
+        if actor and actor.role == "GERENTE":
+            manager_id = actor.id
+        elif manager_id is not None:
+            manager = (
+                db.query(User)
+                .filter(User.id == manager_id, User.role == "GERENTE", User.is_active.is_(True))
+                .first()
+            )
+            if not manager:
+                raise HTTPException(status_code=400, detail="Gerente responsavel nao encontrado")
+    else:
+        manager_id = None
+
     existing_user = db.query(User).filter(User.username == payload.username).first()
     if existing_user:
         raise HTTPException(status_code=409, detail="Usuario ja existe")
 
     user = User(
+        manager_id=manager_id,
         username=payload.username,
         password_hash=hash_password(payload.password),
         full_name=payload.full_name,
@@ -222,10 +260,10 @@ def update_user(
     updates = payload.model_dump(exclude_unset=True)
 
     if actor and actor.role == "GERENTE":
-        blocked_fields = {"role", "is_active"}
+        blocked_fields = {"role", "is_active", "manager_id"}
         if blocked_fields.intersection(updates):
             raise HTTPException(status_code=403, detail="Gerente nao pode alterar role ou status")
-        if user.role != "BROKER":
+        if user.role != "BROKER" or user.manager_id != actor.id:
             raise HTTPException(status_code=403, detail="Gerente pode editar apenas brokers")
 
     if "role" in updates and updates["role"]:
@@ -233,6 +271,21 @@ def update_user(
         if role not in {"ROOT", "GERENTE", "BROKER"}:
             raise HTTPException(status_code=400, detail="Role deve ser ROOT, GERENTE ou BROKER")
         updates["role"] = role
+        if role != "BROKER":
+            updates["manager_id"] = None
+
+    target_role = updates.get("role", user.role)
+    if actor and actor.role == "ROOT" and "manager_id" in updates:
+        if target_role != "BROKER":
+            updates["manager_id"] = None
+        elif updates["manager_id"] is not None:
+            manager = (
+                db.query(User)
+                .filter(User.id == updates["manager_id"], User.role == "GERENTE", User.is_active.is_(True))
+                .first()
+            )
+            if not manager:
+                raise HTTPException(status_code=400, detail="Gerente responsavel nao encontrado")
 
     if "pais_operacao" in updates and updates["pais_operacao"]:
         updates["pais_operacao"] = updates["pais_operacao"].upper()
@@ -278,7 +331,7 @@ def update_own_profile(
 
     updates = payload.model_dump(exclude_unset=True)
 
-    for blocked_field in ("role", "is_active", "username"):
+    for blocked_field in ("role", "is_active", "username", "manager_id"):
         updates.pop(blocked_field, None)
 
     if "pais_operacao" in updates and updates["pais_operacao"]:
@@ -335,7 +388,7 @@ def deactivate_user(
 def assign_leads(
     payload: AssignLeadsRequest,
     db: Session = Depends(get_db),
-    _: User | None = Depends(require_admin_actor),
+    actor: User | None = Depends(require_admin_actor),
 ):
     broker = (
         db.query(User)
@@ -345,6 +398,9 @@ def assign_leads(
 
     if not broker:
         raise HTTPException(status_code=404, detail="Broker ativo nao encontrado")
+
+    if actor and actor.role == "GERENTE" and broker.manager_id != actor.id:
+        raise HTTPException(status_code=403, detail="Gerente pode enviar leads apenas para sua equipe")
 
     query = db.query(Lead).filter(Lead.assigned_to_user_id.is_(None))
 
@@ -373,7 +429,7 @@ def assign_leads(
 def return_leads_to_bank(
     payload: ReturnLeadsRequest,
     db: Session = Depends(get_db),
-    _: User = Depends(require_root_actor),
+    actor: User = Depends(require_root_actor),
 ):
     if not payload.all and (payload.limit is None or payload.limit < 1):
         raise HTTPException(status_code=400, detail="Informe uma quantidade ou marque todos")

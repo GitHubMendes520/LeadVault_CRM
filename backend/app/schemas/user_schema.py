@@ -11,6 +11,7 @@ class LoginRequest(BaseModel):
 class UserCreate(BaseModel):
     username: str
     password: str
+    manager_id: int | None = None
     full_name: str | None = None
     role: str = "BROKER"
     creci: str | None = None
@@ -26,6 +27,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     username: str | None = None
     password: str | None = None
+    manager_id: int | None = None
     full_name: str | None = None
     role: str | None = None
     creci: str | None = None
@@ -41,6 +43,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
+    manager_id: int | None = None
     username: str
     role: str
     full_name: str | None = None

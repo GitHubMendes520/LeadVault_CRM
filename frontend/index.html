@@ -1379,6 +1379,9 @@
             <option value="BROKER">Broker</option>
             <option value="GERENTE">Gerente</option>
           </select>
+          <select id="newBrokerManager" class="root-only">
+            <option value="">Sem gerente</option>
+          </select>
           <button id="createBrokerButton">Cadastrar</button>
         </div>
       </div>
@@ -1497,6 +1500,12 @@
             <option value="BROKER">Broker</option>
             <option value="GERENTE">Gerente</option>
             <option value="ROOT">Root</option>
+          </select>
+        </label>
+        <label class="modal-field root-only">
+          Gerente responsavel
+          <select id="editUserManager">
+            <option value="">Sem gerente</option>
           </select>
         </label>
         <label class="modal-field">
@@ -2381,6 +2390,7 @@
       document.getElementById("editUsername").value = user.username || "";
       document.getElementById("editFullName").value = user.full_name || "";
       document.getElementById("editUserRole").value = user.role || "BROKER";
+      document.getElementById("editUserManager").value = user.manager_id || "";
       document.getElementById("editUserCountry").value = user.pais_operacao || "BR";
       document.getElementById("editUserLanguage").value = user.idioma || "pt";
       document.getElementById("editUserPassword").value = "";
@@ -2484,7 +2494,9 @@
       totalText.textContent = "Carregando leads...";
       const selectedBroker = currentUser.role === "BROKER" ? String(currentUser.id) : brokerFilter.value;
       const brokerParam = selectedBroker ? `&assigned_to_user_id=${selectedBroker}` : "";
-      const response = await fetch(`${API_BASE}/leads/kanban?limit_per_stage=25${brokerParam}`);
+      const response = await fetch(`${API_BASE}/leads/kanban?limit_per_stage=25${brokerParam}`, {
+        headers: { "x-actor-id": String(currentUser.id) }
+      });
       const data = await response.json();
       renderBoard(data);
     }
@@ -2516,7 +2528,9 @@
     }
 
     async function loadInventory() {
-      const response = await fetch(`${API_BASE}/leads/inventory`);
+      const response = await fetch(`${API_BASE}/leads/inventory`, {
+        headers: { "x-actor-id": String(currentUser.id) }
+      });
       if (!response.ok) {
         return;
       }
@@ -2887,11 +2901,17 @@
       const username = document.getElementById("newBrokerUser").value.trim();
       const password = document.getElementById("newBrokerPassword").value;
       const role = document.getElementById("newBrokerRole").value;
+      const managerId = document.getElementById("newBrokerManager").value;
       const paisOperacao = document.getElementById("newBrokerCountry").value;
       const idioma = document.getElementById("newBrokerLanguage").value;
 
       if (!username || !password) {
         alert("Informe usuario e senha do broker");
+        return;
+      }
+
+      if (currentUser.role === "ROOT" && role === "BROKER" && cachedBrokers.some((user) => user.role === "GERENTE") && !managerId) {
+        alert("Selecione o gerente responsavel por este broker");
         return;
       }
 
@@ -2906,6 +2926,7 @@
           username,
           password,
           role,
+          manager_id: role === "BROKER" && managerId ? Number(managerId) : null,
           full_name: username,
           pais_operacao: paisOperacao,
           idioma
@@ -2936,6 +2957,7 @@
       const brokers = await response.json();
       cachedBrokers = brokers;
       const leadReceivers = brokers.filter((broker) => broker.role === "BROKER");
+      const managers = brokers.filter((broker) => broker.role === "GERENTE");
       const totalAssigned = brokers.reduce((sum, broker) => sum + broker.total_leads, 0);
       const totalWon = brokers.reduce((sum, broker) => sum + (broker.pipeline_counts?.["VENDA GANHA"] || 0), 0);
       document.getElementById("metricBrokers").textContent = brokers.length;
@@ -2958,12 +2980,20 @@
       document.getElementById("leadBrokerTarget").innerHTML = '<option value="">Sem broker / banco</option>' + leadReceivers.map((broker) => {
         return `<option value="${broker.id}">${broker.username}</option>`;
       }).join("");
+      const managerOptions = `<option value="">Sem gerente</option>` + managers.map((manager) => {
+        return `<option value="${manager.id}">${manager.full_name || manager.username}</option>`;
+      }).join("");
+      document.getElementById("newBrokerManager").innerHTML = managerOptions;
+      document.getElementById("editUserManager").innerHTML = managerOptions;
 
       brokerList.innerHTML = brokers.map((broker) => {
         const counts = broker.pipeline_counts || {};
         const detalhe = Object.entries(counts).map(([stage, count]) => `${stageLabel(stage)}: ${count}`).join(" | ") || "sem leads";
         const country = userCountries[broker.pais_operacao || "BR"] || userCountries.BR;
         const presenceClass = broker.is_online ? "online" : "offline";
+        const managerName = broker.manager_id
+          ? managers.find((manager) => manager.id === broker.manager_id)?.username
+          : "";
         const viewButton = broker.role === "BROKER"
           ? `<button class="ghost" data-broker-id="${broker.id}">Ver</button>`
           : `<span></span>`;
@@ -2971,6 +3001,7 @@
           <div class="broker-row">
             <span>
               ${broker.username}<br>
+              <small>${broker.role}${managerName ? ` · Gerente: ${escapeHtml(managerName)}` : ""}</small><br>
               <small>${country.label} · ${countryLanguageName(broker.idioma || country.language)}</small>
               <span class="presence-badge ${presenceClass}">
                 <span class="presence-dot"></span>${escapeHtml(presenceLabel(broker))}
@@ -3025,7 +3056,10 @@
 
           await fetch(`${API_BASE}/leads/${leadId}/pipeline`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "x-actor-id": String(currentUser.id)
+            },
             body: JSON.stringify({ pipeline })
           });
 
@@ -3055,7 +3089,10 @@
 
       await fetch(`${API_BASE}/leads/${leadId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-actor-id": String(currentUser.id)
+        },
         body: JSON.stringify({
           nome: document.getElementById("leadNome").value,
           contato: document.getElementById("leadContato").value,
@@ -3100,6 +3137,9 @@
 
       if (currentUser.role === "ROOT" && !editingOwnProfile) {
         payload.role = document.getElementById("editUserRole").value;
+        payload.manager_id = payload.role === "BROKER" && document.getElementById("editUserManager").value
+          ? Number(document.getElementById("editUserManager").value)
+          : null;
       }
 
       if (password) {
@@ -3193,8 +3233,11 @@
 
       await fetch(`${API_BASE}/leads/${leadId}/pipeline`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pipeline: "ATENDIMENTO" })
+        headers: {
+          "Content-Type": "application/json",
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({ pipeline: "NOVO LEAD" })
       });
 
       closeLeadModal();

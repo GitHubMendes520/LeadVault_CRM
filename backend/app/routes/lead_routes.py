@@ -43,16 +43,68 @@ def require_admin_actor(
     return actor
 
 
+def get_actor(
+    x_actor_id: int | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    if x_actor_id is None:
+        raise HTTPException(status_code=403, detail="Usuario nao identificado")
+
+    actor = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
+    if not actor:
+        raise HTTPException(status_code=403, detail="Usuario nao identificado")
+
+    return actor
+
+
+def broker_ids_for_manager(db: Session, manager_id: int):
+    return [
+        broker_id
+        for (broker_id,) in (
+            db.query(User.id)
+            .filter(User.role == "BROKER", User.manager_id == manager_id, User.is_active.is_(True))
+            .all()
+        )
+    ]
+
+
+def apply_actor_scope(query, db: Session, actor: User | None):
+    if not actor or actor.role == "ROOT":
+        return query
+
+    if actor.role == "BROKER":
+        return query.filter(Lead.assigned_to_user_id == actor.id)
+
+    if actor.role == "GERENTE":
+        return query.filter(Lead.assigned_to_user_id.in_(broker_ids_for_manager(db, actor.id)))
+
+    return query.filter(False)
+
+
+def ensure_lead_visible_to_actor(db: Session, lead: Lead, actor: User | None):
+    if not actor or actor.role == "ROOT":
+        return
+
+    if actor.role == "BROKER" and lead.assigned_to_user_id == actor.id:
+        return
+
+    if actor.role == "GERENTE" and lead.assigned_to_user_id in broker_ids_for_manager(db, actor.id):
+        return
+
+    raise HTTPException(status_code=403, detail="Lead fora da sua estrutura")
+
+
 @router.get("/", response_model=list[LeadResponse])
 def list_leads(
     db: Session = Depends(get_db),
+    actor: User | None = Depends(get_actor),
     search: str | None = None,
     pipeline: str | None = None,
     assigned_to_user_id: int | None = None,
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ):
-    query = db.query(Lead)
+    query = apply_actor_scope(db.query(Lead), db, actor)
 
     if search:
         term = f"%{search}%"
@@ -84,13 +136,14 @@ def list_leads(
 @router.get("/kanban")
 def kanban_leads(
     db: Session = Depends(get_db),
+    actor: User | None = Depends(get_actor),
     assigned_to_user_id: int | None = None,
     limit_per_stage: int = Query(default=25, ge=1, le=100),
 ):
     board = {}
 
     for stage in PIPELINE_STAGES:
-        query = db.query(Lead).filter(Lead.pipeline == stage)
+        query = apply_actor_scope(db.query(Lead).filter(Lead.pipeline == stage), db, actor)
 
         if assigned_to_user_id is not None:
             query = query.filter(Lead.assigned_to_user_id == assigned_to_user_id)
@@ -109,7 +162,10 @@ def kanban_leads(
 
 
 @router.get("/inventory")
-def lead_inventory(db: Session = Depends(get_db)):
+def lead_inventory(
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_admin_actor),
+):
     free_query = db.query(Lead).filter(Lead.assigned_to_user_id.is_(None))
     total_free = free_query.count()
 
@@ -150,6 +206,7 @@ def update_lead_pipeline(
     lead_id: int,
     payload: LeadPipelineUpdate,
     db: Session = Depends(get_db),
+    actor: User | None = Depends(get_actor),
 ):
     stage = payload.pipeline.upper()
 
@@ -160,6 +217,7 @@ def update_lead_pipeline(
     if not lead:
         raise HTTPException(status_code=404, detail="Lead nao encontrado")
 
+    ensure_lead_visible_to_actor(db, lead, actor)
     lead.pipeline = stage
     db.commit()
     db.refresh(lead)
@@ -171,11 +229,15 @@ def assign_lead(
     lead_id: int,
     payload: LeadAssignUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead nao encontrado")
+
+    ensure_lead_visible_to_actor(db, lead, actor)
+    if actor.role == "GERENTE" and payload.assigned_to_user_id not in broker_ids_for_manager(db, actor.id):
+        raise HTTPException(status_code=403, detail="Gerente pode mover lead apenas dentro da propria equipe")
 
     lead.assigned_to_user_id = payload.assigned_to_user_id
     db.commit()
@@ -187,12 +249,13 @@ def assign_lead(
 def return_lead_to_bank(
     lead_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead nao encontrado")
 
+    ensure_lead_visible_to_actor(db, lead, actor)
     lead.assigned_to_user_id = None
     lead.pipeline = "NOVO LEAD"
     db.commit()
@@ -204,12 +267,13 @@ def return_lead_to_bank(
 def delete_lead(
     lead_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead nao encontrado")
 
+    ensure_lead_visible_to_actor(db, lead, actor)
     db.delete(lead)
     db.commit()
     return {"deleted": True, "lead_id": lead_id}
@@ -220,11 +284,13 @@ def update_lead(
     lead_id: int,
     payload: LeadUpdate,
     db: Session = Depends(get_db),
+    actor: User | None = Depends(get_actor),
 ):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead nao encontrado")
 
+    ensure_lead_visible_to_actor(db, lead, actor)
     updates = payload.model_dump(exclude_unset=True)
 
     if "pipeline" in updates and updates["pipeline"]:
