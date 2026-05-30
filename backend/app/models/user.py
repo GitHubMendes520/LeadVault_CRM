@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from datetime import datetime, timedelta
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from app.database.connection import Base
 
@@ -19,4 +21,12 @@ class User(Base):
     observacoes = Column(String)
     pais_operacao = Column(String, default="BR")
     idioma = Column(String, default="pt")
+    last_seen_at = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
+
+    @property
+    def is_online(self):
+        if not self.last_seen_at:
+            return False
+
+        return datetime.utcnow() - self.last_seen_at <= timedelta(minutes=2)

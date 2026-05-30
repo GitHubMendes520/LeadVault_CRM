@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -50,6 +52,8 @@ class UserResponse(BaseModel):
     observacoes: str | None = None
     pais_operacao: str | None = None
     idioma: str | None = None
+    last_seen_at: datetime | None = None
+    is_online: bool = False
     is_active: bool
 
     model_config = {

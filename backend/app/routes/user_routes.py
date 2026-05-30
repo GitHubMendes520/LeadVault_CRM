@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import func
@@ -71,7 +72,45 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Usuario inativo")
 
+    user.last_seen_at = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+
     return user
+
+
+@router.post("/me/heartbeat", response_model=UserResponse)
+def heartbeat(
+    x_actor_id: int | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    if x_actor_id is None:
+        raise HTTPException(status_code=403, detail="Usuario nao identificado")
+
+    user = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
+
+    user.last_seen_at = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/me/logout")
+def mark_logout(
+    x_actor_id: int | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    if x_actor_id is None:
+        return {"offline": True}
+
+    user = db.query(User).filter(User.id == x_actor_id).first()
+    if user:
+        user.last_seen_at = None
+        db.commit()
+
+    return {"offline": True}
 
 
 @router.get("/", response_model=list[UserResponse])
@@ -89,7 +128,7 @@ def broker_summary(
 ):
     brokers = (
         db.query(User)
-        .filter(User.role == "BROKER")
+        .filter(User.role.in_(["GERENTE", "BROKER"]))
         .order_by(User.id)
         .all()
     )
@@ -119,6 +158,8 @@ def broker_summary(
                 "observacoes": broker.observacoes,
                 "pais_operacao": broker.pais_operacao,
                 "idioma": broker.idioma,
+                "last_seen_at": broker.last_seen_at,
+                "is_online": broker.is_online,
                 "is_active": broker.is_active,
                 "total_leads": total,
                 "pipeline_counts": counts,
