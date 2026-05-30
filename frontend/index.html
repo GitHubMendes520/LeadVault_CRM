@@ -194,6 +194,7 @@
       gap: 18px;
       color: #334155;
       font-weight: 700;
+      align-items: stretch;
     }
 
     .nav button {
@@ -210,6 +211,71 @@
       color: var(--blue);
       border-bottom: 3px solid var(--blue);
       border-radius: 0;
+    }
+
+    .nav-group {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .mega-menu {
+      position: absolute;
+      top: 54px;
+      left: -28px;
+      z-index: 30;
+      width: min(720px, calc(100vw - 48px));
+      display: none;
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
+      gap: 30px;
+      padding: 26px 30px 28px;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 22px 60px rgba(15, 23, 42, 0.14);
+    }
+
+    .nav-group:hover .mega-menu,
+    .nav-group:focus-within .mega-menu {
+      display: grid;
+    }
+
+    .mega-column {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .mega-title {
+      color: var(--blue);
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .mega-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 34px;
+      padding: 0;
+      color: #475569;
+      background: transparent;
+      border: 0;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .mega-link::before {
+      content: "";
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 5px solid var(--blue);
+    }
+
+    .mega-link:hover {
+      color: var(--blue);
     }
 
     .spacer {
@@ -928,11 +994,29 @@
   <header class="topbar">
     <div class="brand">LeadVault</div>
     <nav class="nav">
-      <button class="active" data-view-target="vendas">Vendas</button>
-      <button data-view-target="leads">Leads</button>
-      <button data-view-target="atendimento">Atendimento</button>
-      <button data-view-target="relatorios">Relatórios</button>
-      <button class="root-only" data-view-target="usuarios">Usuários</button>
+      <div class="nav-group">
+        <button class="nav-main active" data-view-target="vendas">Vendas</button>
+        <div class="mega-menu" aria-label="Menu de vendas">
+          <div class="mega-column">
+            <div class="mega-title" data-menu-title="funnel">Funil</div>
+            <button class="mega-link" data-view-target="vendas" data-menu-key="salesFunnel">Funil de Vendas</button>
+          </div>
+          <div class="mega-column">
+            <div class="mega-title" data-menu-title="clients">Clientes</div>
+            <button class="mega-link" data-view-target="leads" data-menu-key="listClients">Listar Clientes</button>
+            <button class="mega-link" data-view-target="leads" data-menu-key="createClient">Cadastrar Cliente</button>
+          </div>
+          <div class="mega-column">
+            <div class="mega-title" data-menu-title="reservations">Reservas</div>
+            <button class="mega-link" data-view-target="atendimento" data-menu-key="listReservations">Listar Reservas</button>
+            <button class="mega-link" data-view-target="atendimento" data-menu-key="createReservation">Criar Reserva</button>
+          </div>
+        </div>
+      </div>
+      <button class="nav-main" data-view-target="leads">Leads</button>
+      <button class="nav-main" data-view-target="atendimento">Atendimento</button>
+      <button class="nav-main" data-view-target="relatorios">Relatórios</button>
+      <button class="nav-main root-only" data-view-target="usuarios">Usuários</button>
     </nav>
     <div class="spacer"></div>
     <div class="user-pill" id="sessionUser">root <span>Administrador</span></div>
@@ -1291,6 +1375,16 @@
         loginButton: "Entrar",
         loginNote: "Use as credenciais recebidas pelo administrador da operação.",
         nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Usuários"],
+        menu: {
+          funnel: "Funil",
+          clients: "Clientes",
+          reservations: "Reservas",
+          salesFunnel: "Funil de Vendas",
+          listClients: "Listar Clientes",
+          createClient: "Cadastrar Cliente",
+          listReservations: "Listar Reservas",
+          createReservation: "Criar Reserva"
+        },
         logout: "Sair",
         funnelTitle: "Funil de Vendas",
         loadingLeads: "Carregando leads...",
@@ -1369,6 +1463,16 @@
         loginButton: "Sign in",
         loginNote: "Use the credentials provided by your operation administrator.",
         nav: ["Sales", "Leads", "Service", "Reports", "Users"],
+        menu: {
+          funnel: "Pipeline",
+          clients: "Clients",
+          reservations: "Reservations",
+          salesFunnel: "Sales Pipeline",
+          listClients: "List Clients",
+          createClient: "Create Client",
+          listReservations: "List Reservations",
+          createReservation: "Create Reservation"
+        },
         logout: "Sign out",
         funnelTitle: "Sales Pipeline",
         loadingLeads: "Loading leads...",
@@ -1455,6 +1559,16 @@
         loginButton: "Entrar",
         loginNote: "Usa las credenciales recibidas por el administrador de la operación.",
         nav: ["Ventas", "Leads", "Atención", "Reportes", "Usuarios"],
+        menu: {
+          funnel: "Embudo",
+          clients: "Clientes",
+          reservations: "Reservas",
+          salesFunnel: "Embudo de Ventas",
+          listClients: "Listar Clientes",
+          createClient: "Registrar Cliente",
+          listReservations: "Listar Reservas",
+          createReservation: "Crear Reserva"
+        },
         logout: "Salir",
         funnelTitle: "Embudo de Ventas",
         loadingLeads: "Cargando leads...",
@@ -1686,7 +1800,7 @@
       document.querySelectorAll(".view").forEach((view) => {
         view.classList.toggle("active", view.id === `view-${viewName}`);
       });
-      document.querySelectorAll(".nav button[data-view-target]").forEach((button) => {
+      document.querySelectorAll(".nav .nav-main[data-view-target]").forEach((button) => {
         button.classList.toggle("active", button.dataset.viewTarget === viewName);
       });
       document.body.classList.remove("view-vendas", "view-leads", "view-atendimento", "view-relatorios", "view-usuarios");
@@ -1733,8 +1847,14 @@
       setPlaceholder("#loginUser", t("loginUserPlaceholder"));
       setPlaceholder("#loginPassword", t("loginPasswordPlaceholder"));
 
-      document.querySelectorAll(".nav button[data-view-target]").forEach((button, index) => {
+      document.querySelectorAll(".nav .nav-main[data-view-target]").forEach((button, index) => {
         button.textContent = t("nav")[index] || button.textContent;
+      });
+      document.querySelectorAll("[data-menu-title]").forEach((element) => {
+        element.textContent = t("menu")[element.dataset.menuTitle] || element.textContent;
+      });
+      document.querySelectorAll("[data-menu-key]").forEach((element) => {
+        element.textContent = t("menu")[element.dataset.menuKey] || element.textContent;
       });
       setText("#logoutButton", t("logout"));
       setText(".toolbar h1", t("funnelTitle"));
