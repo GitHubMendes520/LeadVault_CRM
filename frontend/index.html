@@ -282,6 +282,25 @@
       flex: 1;
     }
 
+    .support-button {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      background: #114f52;
+      color: #fff;
+      border: 0;
+      padding: 0 18px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .support-button:hover {
+      background: #0f3f42;
+    }
+
     .user-pill {
       display: flex;
       flex-direction: column;
@@ -876,6 +895,120 @@
       font-weight: 800;
     }
 
+    .support-widget {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 45;
+      width: min(420px, calc(100vw - 32px));
+      display: none;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.26);
+    }
+
+    .support-widget.open {
+      display: block;
+    }
+
+    .support-header {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 18px;
+      background: #114f52;
+      color: #fff;
+    }
+
+    .support-header strong {
+      font-size: 18px;
+    }
+
+    .support-header button {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .support-body {
+      display: grid;
+      gap: 16px;
+      padding: 22px;
+    }
+
+    .support-message {
+      background: #f1f5f9;
+      border-radius: 18px 18px 18px 4px;
+      padding: 14px 16px;
+      color: #1e293b;
+      line-height: 1.45;
+    }
+
+    .support-form {
+      display: grid;
+      gap: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .support-form label {
+      display: grid;
+      gap: 6px;
+      color: #334155;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .support-form select,
+    .support-form textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 10px 12px;
+      color: #162846;
+      font: inherit;
+    }
+
+    .support-form textarea {
+      min-height: 94px;
+      resize: vertical;
+    }
+
+    .support-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .support-actions button {
+      min-height: 42px;
+      border-radius: 999px;
+      padding: 0 22px;
+      background: #059669;
+    }
+
+    .support-status {
+      min-height: 18px;
+      color: #047857;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
     .empty {
       align-self: center;
       color: #b0b9ca;
@@ -1019,6 +1152,7 @@
       <button class="nav-main root-only" data-view-target="usuarios">Usuários</button>
     </nav>
     <div class="spacer"></div>
+    <button class="support-button" id="supportButton" type="button">Suporte</button>
     <div class="user-pill" id="sessionUser">root <span>Administrador</span></div>
     <button class="ghost logout-button" id="logoutButton">Sair</button>
   </header>
@@ -1330,6 +1464,46 @@
     </form>
   </div>
 
+  <aside class="support-widget" id="supportWidget" aria-label="Suporte LeadVault">
+    <div class="support-header">
+      <strong id="supportTitle">Suporte LeadVault</strong>
+      <button id="closeSupportButton" type="button" aria-label="Fechar suporte">×</button>
+    </div>
+    <div class="support-body">
+      <div class="support-message" id="supportIntro">Descreva o que aconteceu e em qual módulo. O pedido fica registrado para o administrador acompanhar.</div>
+      <form class="support-form" id="supportForm">
+        <label>
+          <span id="supportModuleLabel">Módulo</span>
+          <select id="supportModule">
+            <option value="login">Acesso/Login</option>
+            <option value="leads">Leads</option>
+            <option value="kanban">Funil/Kanban</option>
+            <option value="usuarios">Usuários</option>
+            <option value="distribuicao">Distribuição</option>
+            <option value="relatorios">Relatórios</option>
+          </select>
+        </label>
+        <label>
+          <span id="supportPriorityLabel">Prioridade</span>
+          <select id="supportPriority">
+            <option value="normal">Normal</option>
+            <option value="alta">Alta</option>
+            <option value="critica">Crítica</option>
+          </select>
+        </label>
+        <label>
+          <span id="supportMessageLabel">Mensagem</span>
+          <textarea id="supportMessage" placeholder="Ex.: não consigo mover o lead para próxima etapa"></textarea>
+        </label>
+        <div class="support-status" id="supportStatus"></div>
+        <div class="support-actions">
+          <span id="supportCount">0 chamados locais</span>
+          <button type="submit" id="sendSupportButton">Enviar</button>
+        </div>
+      </form>
+    </div>
+  </aside>
+
   <script>
     const API_BASE = window.location.protocol === "file:"
       ? "http://127.0.0.1:8000"
@@ -1375,6 +1549,17 @@
         loginButton: "Entrar",
         loginNote: "Use as credenciais recebidas pelo administrador da operação.",
         nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Usuários"],
+        supportButton: "Suporte",
+        supportTitle: "Suporte LeadVault",
+        supportIntro: "Descreva o que aconteceu e em qual módulo. O pedido fica registrado para o administrador acompanhar.",
+        supportModuleLabel: "Módulo",
+        supportPriorityLabel: "Prioridade",
+        supportMessageLabel: "Mensagem",
+        supportMessagePlaceholder: "Ex.: não consigo mover o lead para próxima etapa",
+        sendSupport: "Enviar",
+        supportCount: (total) => `${total} chamado${total === 1 ? "" : "s"} local${total === 1 ? "" : "is"}`,
+        supportEmpty: "Escreva uma mensagem para enviar ao suporte.",
+        supportSent: (protocol) => `Chamado ${protocol} registrado.`,
         menu: {
           funnel: "Funil",
           clients: "Clientes",
@@ -1463,6 +1648,17 @@
         loginButton: "Sign in",
         loginNote: "Use the credentials provided by your operation administrator.",
         nav: ["Sales", "Leads", "Service", "Reports", "Users"],
+        supportButton: "Support",
+        supportTitle: "LeadVault Support",
+        supportIntro: "Describe what happened and which module is affected. The request is stored for the administrator to follow up.",
+        supportModuleLabel: "Module",
+        supportPriorityLabel: "Priority",
+        supportMessageLabel: "Message",
+        supportMessagePlaceholder: "Example: I cannot move the lead to the next stage",
+        sendSupport: "Send",
+        supportCount: (total) => `${total} local ticket${total === 1 ? "" : "s"}`,
+        supportEmpty: "Write a message before sending support.",
+        supportSent: (protocol) => `Ticket ${protocol} registered.`,
         menu: {
           funnel: "Pipeline",
           clients: "Clients",
@@ -1559,6 +1755,17 @@
         loginButton: "Entrar",
         loginNote: "Usa las credenciales recibidas por el administrador de la operación.",
         nav: ["Ventas", "Leads", "Atención", "Reportes", "Usuarios"],
+        supportButton: "Soporte",
+        supportTitle: "Soporte LeadVault",
+        supportIntro: "Describe lo que ocurrió y en qué módulo. La solicitud queda registrada para seguimiento del administrador.",
+        supportModuleLabel: "Módulo",
+        supportPriorityLabel: "Prioridad",
+        supportMessageLabel: "Mensaje",
+        supportMessagePlaceholder: "Ej.: no puedo mover el lead a la siguiente etapa",
+        sendSupport: "Enviar",
+        supportCount: (total) => `${total} ticket${total === 1 ? "" : "s"} local${total === 1 ? "" : "es"}`,
+        supportEmpty: "Escribe un mensaje para enviar al soporte.",
+        supportSent: (protocol) => `Ticket ${protocol} registrado.`,
         menu: {
           funnel: "Embudo",
           clients: "Clientes",
@@ -1857,6 +2064,15 @@
         element.textContent = t("menu")[element.dataset.menuKey] || element.textContent;
       });
       setText("#logoutButton", t("logout"));
+      setText("#supportButton", t("supportButton"));
+      setText("#supportTitle", t("supportTitle"));
+      setText("#supportIntro", t("supportIntro"));
+      setText("#supportModuleLabel", t("supportModuleLabel"));
+      setText("#supportPriorityLabel", t("supportPriorityLabel"));
+      setText("#supportMessageLabel", t("supportMessageLabel"));
+      setText("#sendSupportButton", t("sendSupport"));
+      setPlaceholder("#supportMessage", t("supportMessagePlaceholder"));
+      refreshSupportCount();
       setText(".toolbar h1", t("funnelTitle"));
       setPlaceholder("#searchInput", t("searchPlaceholder"));
       setText("#reloadButton", t("filterButton"));
@@ -2307,6 +2523,50 @@
       }
     }
 
+    function supportTickets() {
+      return JSON.parse(localStorage.getItem("leadvault_support_tickets") || "[]");
+    }
+
+    function refreshSupportCount() {
+      const counter = document.getElementById("supportCount");
+      if (counter) {
+        counter.textContent = t("supportCount")(supportTickets().length);
+      }
+    }
+
+    function openSupport() {
+      document.getElementById("supportWidget").classList.add("open");
+      refreshSupportCount();
+    }
+
+    function closeSupport() {
+      document.getElementById("supportWidget").classList.remove("open");
+    }
+
+    function sendSupportTicket(event) {
+      event.preventDefault();
+      const message = document.getElementById("supportMessage").value.trim();
+      if (!message) {
+        document.getElementById("supportStatus").textContent = t("supportEmpty");
+        return;
+      }
+      const protocol = "LV-" + String(Date.now()).slice(-6);
+      const tickets = supportTickets();
+      tickets.push({
+        protocol,
+        module: document.getElementById("supportModule").value,
+        priority: document.getElementById("supportPriority").value,
+        message,
+        user: currentUser.username,
+        role: currentUser.role,
+        created_at: new Date().toISOString()
+      });
+      localStorage.setItem("leadvault_support_tickets", JSON.stringify(tickets));
+      document.getElementById("supportMessage").value = "";
+      document.getElementById("supportStatus").textContent = t("supportSent")(protocol);
+      refreshSupportCount();
+    }
+
     async function createBroker() {
       const username = document.getElementById("newBrokerUser").value.trim();
       const password = document.getElementById("newBrokerPassword").value;
@@ -2693,6 +2953,9 @@
     document.getElementById("seedBrokerButton").addEventListener("click", sendToBroker);
     document.getElementById("loginForm").addEventListener("submit", login);
     document.getElementById("logoutButton").addEventListener("click", logout);
+    document.getElementById("supportButton").addEventListener("click", openSupport);
+    document.getElementById("closeSupportButton").addEventListener("click", closeSupport);
+    document.getElementById("supportForm").addEventListener("submit", sendSupportTicket);
     document.getElementById("createBrokerButton").addEventListener("click", createBroker);
     document.getElementById("editMyProfileButton").addEventListener("click", openMyProfile);
     document.getElementById("moveLeadBrokerButton").addEventListener("click", moveLeadToBroker);
