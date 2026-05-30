@@ -8,9 +8,10 @@ from sqlalchemy import text
 
 from app.core.security import hash_password
 from app.database.connection import Base, SessionLocal, engine
-from app.models import lead, user
+from app.models import lead, support_ticket, user
 from app.models.user import User
 from app.routes.lead_routes import router as lead_router
+from app.routes.support_routes import router as support_router
 from app.routes.user_routes import router as user_router
 
 app = FastAPI(
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(lead_router)
 app.include_router(user_router)
+app.include_router(support_router)
 
 
 @app.on_event("startup")

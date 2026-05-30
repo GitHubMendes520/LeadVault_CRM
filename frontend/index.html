@@ -492,10 +492,12 @@
     body.view-leads .toolbar,
     body.view-atendimento .toolbar,
     body.view-relatorios .toolbar,
+    body.view-suporte .toolbar,
     body.view-usuarios .toolbar,
     body.view-leads .admin-panel,
     body.view-atendimento .admin-panel,
     body.view-relatorios .admin-panel,
+    body.view-suporte .admin-panel,
     body.view-usuarios .admin-panel {
       display: none;
     }
@@ -550,6 +552,45 @@
       font-weight: 700;
       border-top: 1px solid #eef2f7;
       padding-top: 8px;
+    }
+
+    .ticket-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      border-top: 1px solid #eef2f7;
+      padding: 12px 0;
+      color: #334155;
+    }
+
+    .ticket-row strong {
+      color: var(--text);
+    }
+
+    .ticket-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .ticket-message {
+      margin-top: 8px;
+      color: #1e293b;
+      line-height: 1.4;
+    }
+
+    .ticket-status {
+      min-width: 160px;
+      min-height: 40px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 0 10px;
+      color: var(--text);
+      font-weight: 800;
     }
 
     .small-badge {
@@ -1149,6 +1190,7 @@
       <button class="nav-main" data-view-target="leads">Leads</button>
       <button class="nav-main" data-view-target="atendimento">Atendimento</button>
       <button class="nav-main" data-view-target="relatorios">Relatórios</button>
+      <button class="nav-main manager-only" data-view-target="suporte">Suporte</button>
       <button class="nav-main root-only" data-view-target="usuarios">Usuários</button>
     </nav>
     <div class="spacer"></div>
@@ -1264,6 +1306,15 @@
           <div class="metric">No banco<strong id="metricBank">0</strong></div>
           <div class="metric">Venda ganha<strong id="metricWon">0</strong></div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view manager-only" id="view-suporte">
+    <div class="view-grid">
+      <div class="panel-box" style="grid-column: 1 / -1;">
+        <div class="panel-title">Chamados de suporte</div>
+        <div class="broker-list" id="supportTicketList"></div>
       </div>
     </div>
   </section>
@@ -1548,7 +1599,7 @@
         loginPasswordPlaceholder: "Senha",
         loginButton: "Entrar",
         loginNote: "Use as credenciais recebidas pelo administrador da operação.",
-        nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Usuários"],
+        nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Suporte", "Usuários"],
         supportButton: "Suporte",
         supportTitle: "Suporte LeadVault",
         supportIntro: "Descreva o que aconteceu e em qual módulo. O pedido fica registrado para o administrador acompanhar.",
@@ -1557,9 +1608,14 @@
         supportMessageLabel: "Mensagem",
         supportMessagePlaceholder: "Ex.: não consigo mover o lead para próxima etapa",
         sendSupport: "Enviar",
-        supportCount: (total) => `${total} chamado${total === 1 ? "" : "s"} local${total === 1 ? "" : "is"}`,
+        supportCount: (total) => `${total} chamado${total === 1 ? "" : "s"}`,
         supportEmpty: "Escreva uma mensagem para enviar ao suporte.",
         supportSent: (protocol) => `Chamado ${protocol} registrado.`,
+        supportTicketsTitle: "Chamados de suporte",
+        noSupportTickets: "Nenhum chamado registrado.",
+        supportStatusOpen: "Aberto",
+        supportStatusProgress: "Em atendimento",
+        supportStatusDone: "Resolvido",
         menu: {
           funnel: "Funil",
           clients: "Clientes",
@@ -1647,7 +1703,7 @@
         loginPasswordPlaceholder: "Password",
         loginButton: "Sign in",
         loginNote: "Use the credentials provided by your operation administrator.",
-        nav: ["Sales", "Leads", "Service", "Reports", "Users"],
+        nav: ["Sales", "Leads", "Service", "Reports", "Support", "Users"],
         supportButton: "Support",
         supportTitle: "LeadVault Support",
         supportIntro: "Describe what happened and which module is affected. The request is stored for the administrator to follow up.",
@@ -1656,9 +1712,14 @@
         supportMessageLabel: "Message",
         supportMessagePlaceholder: "Example: I cannot move the lead to the next stage",
         sendSupport: "Send",
-        supportCount: (total) => `${total} local ticket${total === 1 ? "" : "s"}`,
+        supportCount: (total) => `${total} ticket${total === 1 ? "" : "s"}`,
         supportEmpty: "Write a message before sending support.",
         supportSent: (protocol) => `Ticket ${protocol} registered.`,
+        supportTicketsTitle: "Support tickets",
+        noSupportTickets: "No tickets registered.",
+        supportStatusOpen: "Open",
+        supportStatusProgress: "In progress",
+        supportStatusDone: "Resolved",
         menu: {
           funnel: "Pipeline",
           clients: "Clients",
@@ -1754,7 +1815,7 @@
         loginPasswordPlaceholder: "Contraseña",
         loginButton: "Entrar",
         loginNote: "Usa las credenciales recibidas por el administrador de la operación.",
-        nav: ["Ventas", "Leads", "Atención", "Reportes", "Usuarios"],
+        nav: ["Ventas", "Leads", "Atención", "Reportes", "Soporte", "Usuarios"],
         supportButton: "Soporte",
         supportTitle: "Soporte LeadVault",
         supportIntro: "Describe lo que ocurrió y en qué módulo. La solicitud queda registrada para seguimiento del administrador.",
@@ -1763,9 +1824,14 @@
         supportMessageLabel: "Mensaje",
         supportMessagePlaceholder: "Ej.: no puedo mover el lead a la siguiente etapa",
         sendSupport: "Enviar",
-        supportCount: (total) => `${total} ticket${total === 1 ? "" : "s"} local${total === 1 ? "" : "es"}`,
+        supportCount: (total) => `${total} ticket${total === 1 ? "" : "s"}`,
         supportEmpty: "Escribe un mensaje para enviar al soporte.",
         supportSent: (protocol) => `Ticket ${protocol} registrado.`,
+        supportTicketsTitle: "Tickets de soporte",
+        noSupportTickets: "No hay tickets registrados.",
+        supportStatusOpen: "Abierto",
+        supportStatusProgress: "En atención",
+        supportStatusDone: "Resuelto",
         menu: {
           funnel: "Embudo",
           clients: "Clientes",
@@ -1876,6 +1942,7 @@
     const userModal = document.getElementById("userModal");
     let cachedBrokers = [];
     let cachedInventory = null;
+    let cachedSupportTickets = [];
     let editingOwnProfile = false;
     let currentUser = { id: 1, username: "root", role: "ROOT" };
     let cachedBoard = null;
@@ -2010,8 +2077,11 @@
       document.querySelectorAll(".nav .nav-main[data-view-target]").forEach((button) => {
         button.classList.toggle("active", button.dataset.viewTarget === viewName);
       });
-      document.body.classList.remove("view-vendas", "view-leads", "view-atendimento", "view-relatorios", "view-usuarios");
+      document.body.classList.remove("view-vendas", "view-leads", "view-atendimento", "view-relatorios", "view-suporte", "view-usuarios");
       document.body.classList.add(`view-${viewName}`);
+      if (viewName === "suporte") {
+        loadSupportTickets().catch(() => {});
+      }
     }
 
     function setText(selector, value) {
@@ -2096,6 +2166,7 @@
         t("stockBySegment"),
         t("nav")[2],
         t("nav")[3],
+        t("supportTicketsTitle"),
         t("createUserTitle"),
         t("usersTitle")
       ].forEach((label, index) => {
@@ -2125,6 +2196,8 @@
       if (cachedInventory) {
         loadInventory().catch(() => {});
       }
+      renderSupportTickets();
+      refreshSupportCount();
     }
 
     function cardTemplate(lead) {
@@ -2461,6 +2534,7 @@
       await loadBrokers();
       await loadInventory();
       await loadBoard();
+      await loadSupportTickets();
       startBrokerLeadWatch();
     }
 
@@ -2523,15 +2597,67 @@
       }
     }
 
-    function supportTickets() {
-      return JSON.parse(localStorage.getItem("leadvault_support_tickets") || "[]");
-    }
-
     function refreshSupportCount() {
       const counter = document.getElementById("supportCount");
       if (counter) {
-        counter.textContent = t("supportCount")(supportTickets().length);
+        counter.textContent = t("supportCount")(cachedSupportTickets.length);
       }
+    }
+
+    function renderSupportTickets() {
+      const list = document.getElementById("supportTicketList");
+      if (!list) {
+        return;
+      }
+
+      if (!cachedSupportTickets.length) {
+        list.innerHTML = `<div class="line">${t("noSupportTickets")}</div>`;
+        return;
+      }
+
+      list.innerHTML = cachedSupportTickets.map((ticket) => {
+        const creator = ticket.created_by_full_name || ticket.created_by_username || "LeadVault";
+        const createdAt = new Date(ticket.created_at).toLocaleString(translations[currentLanguage].locale);
+        return `
+          <div class="ticket-row">
+            <div>
+              <strong>${escapeHtml(ticket.protocol || `LV-${ticket.id}`)} · ${escapeHtml(ticket.module)}</strong>
+              <div class="ticket-meta">
+                <span>${escapeHtml(ticket.priority)}</span>
+                <span>${escapeHtml(creator)}</span>
+                <span>${escapeHtml(ticket.created_by_role || "")}</span>
+                <span>${escapeHtml(createdAt)}</span>
+              </div>
+              <div class="ticket-message">${escapeHtml(ticket.message)}</div>
+            </div>
+            <select class="ticket-status" data-ticket-id="${ticket.id}">
+              <option value="ABERTO" ${ticket.status === "ABERTO" ? "selected" : ""}>${t("supportStatusOpen")}</option>
+              <option value="EM_ATENDIMENTO" ${ticket.status === "EM_ATENDIMENTO" ? "selected" : ""}>${t("supportStatusProgress")}</option>
+              <option value="RESOLVIDO" ${ticket.status === "RESOLVIDO" ? "selected" : ""}>${t("supportStatusDone")}</option>
+            </select>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function loadSupportTickets() {
+      if (!currentUser || !["ROOT", "GERENTE"].includes(currentUser.role)) {
+        cachedSupportTickets = [];
+        refreshSupportCount();
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/support/tickets`, {
+        headers: { "x-actor-id": String(currentUser.id) }
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      cachedSupportTickets = await response.json();
+      renderSupportTickets();
+      refreshSupportCount();
     }
 
     function openSupport() {
@@ -2543,28 +2669,56 @@
       document.getElementById("supportWidget").classList.remove("open");
     }
 
-    function sendSupportTicket(event) {
+    async function sendSupportTicket(event) {
       event.preventDefault();
       const message = document.getElementById("supportMessage").value.trim();
       if (!message) {
         document.getElementById("supportStatus").textContent = t("supportEmpty");
         return;
       }
-      const protocol = "LV-" + String(Date.now()).slice(-6);
-      const tickets = supportTickets();
-      tickets.push({
-        protocol,
-        module: document.getElementById("supportModule").value,
-        priority: document.getElementById("supportPriority").value,
-        message,
-        user: currentUser.username,
-        role: currentUser.role,
-        created_at: new Date().toISOString()
+
+      const response = await fetch(`${API_BASE}/support/tickets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({
+          module: document.getElementById("supportModule").value,
+          priority: document.getElementById("supportPriority").value,
+          message
+        })
       });
-      localStorage.setItem("leadvault_support_tickets", JSON.stringify(tickets));
+
+      if (!response.ok) {
+        document.getElementById("supportStatus").textContent = "Nao foi possivel registrar o chamado.";
+        return;
+      }
+
+      const ticket = await response.json();
       document.getElementById("supportMessage").value = "";
-      document.getElementById("supportStatus").textContent = t("supportSent")(protocol);
-      refreshSupportCount();
+      document.getElementById("supportStatus").textContent = t("supportSent")(ticket.protocol || `LV-${ticket.id}`);
+      if (["ROOT", "GERENTE"].includes(currentUser.role)) {
+        await loadSupportTickets();
+      } else {
+        cachedSupportTickets = [ticket, ...cachedSupportTickets];
+        refreshSupportCount();
+      }
+    }
+
+    async function updateSupportTicketStatus(ticketId, status) {
+      const response = await fetch(`${API_BASE}/support/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({ status })
+      });
+
+      if (response.ok) {
+        await loadSupportTickets();
+      }
     }
 
     async function createBroker() {
@@ -2956,6 +3110,11 @@
     document.getElementById("supportButton").addEventListener("click", openSupport);
     document.getElementById("closeSupportButton").addEventListener("click", closeSupport);
     document.getElementById("supportForm").addEventListener("submit", sendSupportTicket);
+    document.getElementById("supportTicketList").addEventListener("change", (event) => {
+      if (event.target.classList.contains("ticket-status")) {
+        updateSupportTicketStatus(event.target.dataset.ticketId, event.target.value);
+      }
+    });
     document.getElementById("createBrokerButton").addEventListener("click", createBroker);
     document.getElementById("editMyProfileButton").addEventListener("click", openMyProfile);
     document.getElementById("moveLeadBrokerButton").addEventListener("click", moveLeadToBroker);
