@@ -317,7 +317,7 @@ def assign_leads(
 
     for lead in leads:
         lead.assigned_to_user_id = broker.id
-        lead.pipeline = "ATENDIMENTO"
+        lead.pipeline = "NOVO LEAD"
 
     db.commit()
 
