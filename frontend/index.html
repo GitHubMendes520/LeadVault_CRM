@@ -936,6 +936,17 @@
       font-weight: 800;
     }
 
+    .line a {
+      color: inherit;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+
+    .line a:hover {
+      color: #1d4ed8;
+      text-decoration: underline;
+    }
+
     .support-widget {
       position: fixed;
       right: 24px;
@@ -2053,6 +2064,38 @@
       return digits;
     }
 
+    function normalizeSiteUrl(site) {
+      const value = String(site || "").trim();
+      if (!value) {
+        return "";
+      }
+
+      if (/^https?:\/\//i.test(value)) {
+        return value;
+      }
+
+      return `https://${value}`;
+    }
+
+    function emailLineTemplate(email) {
+      const value = String(email || "").trim();
+      if (!value) {
+        return escapeHtml(t("emailMissing"));
+      }
+
+      return `<a href="mailto:${encodeURIComponent(value)}">${escapeHtml(value)}</a>`;
+    }
+
+    function siteLineTemplate(site) {
+      const value = String(site || "").trim();
+      const url = normalizeSiteUrl(value);
+      if (!url) {
+        return escapeHtml(t("siteMissing"));
+      }
+
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(value)}</a>`;
+    }
+
     function contactActionTemplate(lead) {
       const phone = cleanPhoneNumber(lead.contato);
       const whats = whatsappNumber(lead.contato, lead.pais);
@@ -2204,8 +2247,6 @@
       const title = lead.nome || "Lead sem nome";
       const niche = [lead.nicho, lead.pais].filter(Boolean).join(" · ") || "SEM CLASSIFICACAO";
       const contact = lead.contato || t("contactMissing");
-      const email = lead.email || t("emailMissing");
-      const site = lead.site || t("siteMissing");
       const country = countryInfo(lead.pais);
       const value = Number(lead.valor_negocio || 0);
       const stageClass = `stage-${(lead.pipeline || "NOVO LEAD").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
@@ -2226,8 +2267,8 @@
           <div class="deal-value">${t("deal")}: ${formatCurrency(value)}</div>
           <div class="divider"></div>
           <div class="line"><strong>☎</strong>${escapeHtml(contact)}</div>
-          <div class="line"><strong>✉</strong>${escapeHtml(email)}</div>
-          <div class="line"><strong>↗</strong>${escapeHtml(site)}</div>
+          <div class="line"><strong>✉</strong>${emailLineTemplate(lead.email)}</div>
+          <div class="line"><strong>↗</strong>${siteLineTemplate(lead.site)}</div>
           ${contactActionTemplate(lead)}
         </article>
       `;
