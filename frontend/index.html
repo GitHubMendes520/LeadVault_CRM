@@ -948,6 +948,23 @@
       text-decoration: none;
     }
 
+    .card-clock {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px dashed #d8dfeb;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .card-clock strong {
+      color: #0f766e;
+      font-size: 15px;
+    }
+
     .broker-toast {
       position: fixed;
       right: 18px;
@@ -1733,6 +1750,8 @@
         offline: "Offline",
         lastSeen: "Visto por ultimo",
         neverSeen: "Ainda nao entrou",
+        stagnantFor: "Parado ha",
+        stageSince: "Nesta etapa",
         newLeadToast: (diff) => `Você recebeu ${diff} novo${diff > 1 ? "s" : ""} lead${diff > 1 ? "s" : ""}.`,
         stages: stageLabels
       },
@@ -1841,6 +1860,8 @@
         offline: "Offline",
         lastSeen: "Last seen",
         neverSeen: "Has not signed in yet",
+        stagnantFor: "Stalled for",
+        stageSince: "In this stage",
         newLeadToast: (diff) => `You received ${diff} new lead${diff > 1 ? "s" : ""}.`,
         stages: {
           "NOVO LEAD": "Waiting Service",
@@ -1957,6 +1978,8 @@
         offline: "Offline",
         lastSeen: "Visto por ultima vez",
         neverSeen: "Aún no entró",
+        stagnantFor: "Parado hace",
+        stageSince: "En esta etapa",
         newLeadToast: (diff) => `Recibiste ${diff} lead${diff > 1 ? "s" : ""} nuevo${diff > 1 ? "s" : ""}.`,
         stages: {
           "NOVO LEAD": "Esperando Atención",
@@ -2065,6 +2088,37 @@
         style: "currency",
         currency: config.currency
       }).format(Number(value || 0));
+    }
+
+    function timeAgo(value) {
+      if (!value) {
+        return "-";
+      }
+
+      const date = new Date(value);
+      const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+      const minute = 60;
+      const hour = minute * 60;
+      const day = hour * 24;
+      const hourLabel = currentLanguage === "en" ? "hour" : currentLanguage === "es" ? "hora" : "hora";
+      const dayLabel = currentLanguage === "en" ? "day" : currentLanguage === "es" ? "dia" : "dia";
+
+      if (seconds < minute) {
+        return "1 min";
+      }
+
+      if (seconds < hour) {
+        const minutes = Math.floor(seconds / minute);
+        return `${minutes} min`;
+      }
+
+      if (seconds < day) {
+        const hours = Math.floor(seconds / hour);
+        return `${hours} ${hourLabel}${hours > 1 ? "s" : ""}`;
+      }
+
+      const days = Math.floor(seconds / day);
+      return `${days} ${dayLabel}${days > 1 ? "s" : ""}`;
     }
 
     function countryInfo(pais) {
@@ -2313,6 +2367,7 @@
       const country = countryInfo(lead.pais);
       const value = Number(lead.valor_negocio || 0);
       const stageClass = `stage-${(lead.pipeline || "NOVO LEAD").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      const staleTime = timeAgo(lead.pipeline_updated_at || lead.updated_at || lead.created_at);
 
       return `
         <article class="card ${stageClass}" draggable="true" data-lead-id="${lead.id}">
@@ -2333,6 +2388,9 @@
           <div class="line"><strong>✉</strong>${emailLineTemplate(lead.email)}</div>
           <div class="line"><strong>↗</strong>${siteLineTemplate(lead.site)}</div>
           ${contactActionTemplate(lead)}
+          <div class="card-clock" title="${escapeHtml(t("stageSince"))}: ${escapeHtml(lead.pipeline_updated_at || "")}">
+            <strong>◷</strong>${t("stagnantFor")} ${escapeHtml(staleTime)}
+          </div>
         </article>
       `;
     }
@@ -2494,7 +2552,8 @@
       totalText.textContent = "Carregando leads...";
       const selectedBroker = currentUser.role === "BROKER" ? String(currentUser.id) : brokerFilter.value;
       const brokerParam = selectedBroker ? `&assigned_to_user_id=${selectedBroker}` : "";
-      const response = await fetch(`${API_BASE}/leads/kanban?limit_per_stage=25${brokerParam}`, {
+      const limitPerStage = selectedBroker ? 100 : 25;
+      const response = await fetch(`${API_BASE}/leads/kanban?limit_per_stage=${limitPerStage}${brokerParam}`, {
         headers: { "x-actor-id": String(currentUser.id) }
       });
       const data = await response.json();
@@ -3018,7 +3077,12 @@
       brokerList.querySelectorAll("button[data-broker-id]").forEach((button) => {
         button.addEventListener("click", async () => {
           brokerFilter.value = button.dataset.brokerId;
+          showView("vendas");
           await loadBoard();
+          const kanban = document.querySelector(".kanban");
+          if (kanban) {
+            window.scrollTo({ top: kanban.offsetTop - 20, behavior: "smooth" });
+          }
         });
       });
 

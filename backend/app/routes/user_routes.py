@@ -415,6 +415,8 @@ def assign_leads(
     for lead in leads:
         lead.assigned_to_user_id = broker.id
         lead.pipeline = "NOVO LEAD"
+        lead.pipeline_updated_at = datetime.utcnow()
+        lead.updated_at = datetime.utcnow()
 
     db.commit()
 
@@ -455,6 +457,8 @@ def return_leads_to_bank(
     for lead in leads:
         lead.assigned_to_user_id = None
         lead.pipeline = "NOVO LEAD"
+        lead.pipeline_updated_at = datetime.utcnow()
+        lead.updated_at = datetime.utcnow()
 
     db.commit()
 

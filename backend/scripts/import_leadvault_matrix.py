@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 import sys
+from datetime import datetime
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -62,6 +63,7 @@ def iter_source_leads(source_db):
     with sqlite3.connect(source_db) as conn:
         conn.row_factory = sqlite3.Row
         for row in conn.execute(query):
+            now = datetime.utcnow()
             yield {
                 "nome": clean_text(row["nome"]),
                 "contato": clean_text(row["contato"]),
@@ -72,6 +74,9 @@ def iter_source_leads(source_db):
                 "pais": clean_text(row["pais"]),
                 "score": clean_score(row["score"]),
                 "pipeline": "NOVO LEAD",
+                "pipeline_updated_at": now,
+                "created_at": now,
+                "updated_at": now,
             }
 
 

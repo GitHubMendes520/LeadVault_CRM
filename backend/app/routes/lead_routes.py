@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -218,7 +220,10 @@ def update_lead_pipeline(
         raise HTTPException(status_code=404, detail="Lead nao encontrado")
 
     ensure_lead_visible_to_actor(db, lead, actor)
+    if lead.pipeline != stage:
+        lead.pipeline_updated_at = datetime.utcnow()
     lead.pipeline = stage
+    lead.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(lead)
     return lead
@@ -240,6 +245,7 @@ def assign_lead(
         raise HTTPException(status_code=403, detail="Gerente pode mover lead apenas dentro da propria equipe")
 
     lead.assigned_to_user_id = payload.assigned_to_user_id
+    lead.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(lead)
     return lead
@@ -258,6 +264,8 @@ def return_lead_to_bank(
     ensure_lead_visible_to_actor(db, lead, actor)
     lead.assigned_to_user_id = None
     lead.pipeline = "NOVO LEAD"
+    lead.pipeline_updated_at = datetime.utcnow()
+    lead.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(lead)
     return lead
@@ -297,11 +305,14 @@ def update_lead(
         stage = updates["pipeline"].upper()
         if stage not in PIPELINE_STAGES:
             raise HTTPException(status_code=400, detail="Etapa de pipeline invalida")
+        if lead.pipeline != stage:
+            lead.pipeline_updated_at = datetime.utcnow()
         updates["pipeline"] = stage
 
     for field, value in updates.items():
         setattr(lead, field, value)
 
+    lead.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(lead)
     return lead

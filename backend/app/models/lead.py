@@ -1,4 +1,6 @@
-from sqlalchemy import Column, ForeignKey, Integer, Numeric, String
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
 from app.database.connection import Base
 
 class Lead(Base):
@@ -23,4 +25,7 @@ class Lead(Base):
     valor_negocio = Column(Numeric(12, 2), default=0)
 
     pipeline = Column(String, default="NOVO LEAD")
+    pipeline_updated_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
     assigned_to_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)

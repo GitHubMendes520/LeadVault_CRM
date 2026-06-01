@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -18,6 +20,9 @@ class LeadResponse(BaseModel):
     score: int | None = None
     valor_negocio: float | None = None
     pipeline: str | None = None
+    pipeline_updated_at: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     assigned_to_user_id: int | None = None
 
     model_config = {
