@@ -2031,6 +2031,7 @@
     let brokerRefreshTimer = null;
     let presenceTimer = null;
     let userRefreshTimer = null;
+    let boardClockTimer = null;
     let currentLanguage = localStorage.getItem("leadvault_language") || "pt";
 
     function t(key) {
@@ -2100,25 +2101,29 @@
       const minute = 60;
       const hour = minute * 60;
       const day = hour * 24;
-      const hourLabel = currentLanguage === "en" ? "hour" : currentLanguage === "es" ? "hora" : "hora";
-      const dayLabel = currentLanguage === "en" ? "day" : currentLanguage === "es" ? "dia" : "dia";
-
-      if (seconds < minute) {
-        return "1 min";
-      }
-
-      if (seconds < hour) {
-        const minutes = Math.floor(seconds / minute);
-        return `${minutes} min`;
-      }
-
-      if (seconds < day) {
-        const hours = Math.floor(seconds / hour);
-        return `${hours} ${hourLabel}${hours > 1 ? "s" : ""}`;
-      }
-
       const days = Math.floor(seconds / day);
-      return `${days} ${dayLabel}${days > 1 ? "s" : ""}`;
+      const hours = Math.floor((seconds % day) / hour);
+      const minutes = Math.max(1, Math.floor((seconds % hour) / minute));
+      const labels = {
+        pt: { day: "dia", hour: "hora", minute: "min" },
+        en: { day: "day", hour: "hour", minute: "min" },
+        es: { day: "dia", hour: "hora", minute: "min" }
+      }[currentLanguage] || { day: "dia", hour: "hora", minute: "min" };
+      const parts = [];
+
+      if (days > 0) {
+        parts.push(`${days} ${labels.day}${days > 1 ? "s" : ""}`);
+      }
+
+      if (hours > 0) {
+        parts.push(`${hours} ${labels.hour}${hours > 1 ? "s" : ""}`);
+      }
+
+      if (minutes > 0 && days < 7) {
+        parts.push(`${minutes} ${labels.minute}`);
+      }
+
+      return parts.join(" ");
     }
 
     function countryInfo(pais) {
@@ -2548,6 +2553,18 @@
       bindCardOpen();
     }
 
+    function startBoardClock() {
+      if (boardClockTimer) {
+        clearInterval(boardClockTimer);
+      }
+
+      boardClockTimer = setInterval(() => {
+        if (cachedBoard && document.body.classList.contains("logged-in")) {
+          renderBoard(cachedBoard);
+        }
+      }, 30000);
+    }
+
     async function loadBoard() {
       totalText.textContent = "Carregando leads...";
       const selectedBroker = currentUser.role === "BROKER" ? String(currentUser.id) : brokerFilter.value;
@@ -2762,6 +2779,7 @@
       startPresenceWatch();
       startUserPresenceRefresh();
       startBrokerLeadWatch();
+      startBoardClock();
     }
 
     function startBrokerLeadWatch() {
@@ -2813,6 +2831,10 @@
       if (userRefreshTimer) {
         clearInterval(userRefreshTimer);
         userRefreshTimer = null;
+      }
+      if (boardClockTimer) {
+        clearInterval(boardClockTimer);
+        boardClockTimer = null;
       }
       currentUser = { id: 1, username: "root", role: "ROOT" };
       cachedBoard = null;
