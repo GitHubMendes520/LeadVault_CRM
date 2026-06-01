@@ -2091,12 +2091,29 @@
       }).format(Number(value || 0));
     }
 
-    function timeAgo(value) {
+    function parseServerDate(value) {
       if (!value) {
+        return null;
+      }
+
+      let text = String(value).trim();
+      if (!text) {
+        return null;
+      }
+
+      text = text.replace(" ", "T");
+      const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
+      const date = new Date(hasTimezone ? text : `${text}Z`);
+
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function timeAgo(value) {
+      const date = parseServerDate(value);
+      if (!date) {
         return "-";
       }
 
-      const date = new Date(value);
       const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
       const minute = 60;
       const hour = minute * 60;
