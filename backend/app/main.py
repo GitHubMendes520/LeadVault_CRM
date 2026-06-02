@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.core.security import hash_password
@@ -30,6 +31,10 @@ app.add_middleware(
 app.include_router(lead_router)
 app.include_router(user_router)
 app.include_router(support_router)
+
+frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
+if frontend_dir.exists():
+    app.mount("/assets", StaticFiles(directory=frontend_dir), name="assets")
 
 
 @app.on_event("startup")
@@ -67,7 +72,7 @@ def create_database_tables():
 
 @app.get("/")
 def home():
-    frontend_index = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+    frontend_index = frontend_dir / "index.html"
     if frontend_index.exists():
         return FileResponse(frontend_index)
 
