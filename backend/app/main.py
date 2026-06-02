@@ -8,7 +8,7 @@ from sqlalchemy import text
 
 from app.core.security import hash_password
 from app.database.connection import Base, SessionLocal, engine
-from app.models import lead, support_ticket, user
+from app.models import lead, lead_event, support_ticket, user
 from app.models.user import User
 from app.routes.lead_routes import router as lead_router
 from app.routes.support_routes import router as support_router

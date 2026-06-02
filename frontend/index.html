@@ -722,6 +722,69 @@
       align-items: end;
     }
 
+    .lead-history {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .lead-history-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .lead-note-box {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .lead-note-box textarea {
+      min-height: 70px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 600;
+      resize: vertical;
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 8px;
+      max-height: 240px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .timeline-item {
+      border: 1px solid #dbe4f0;
+      border-left: 4px solid var(--blue);
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: #f8fafc;
+    }
+
+    .timeline-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .timeline-message {
+      color: var(--text);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
     .danger {
       background: #dc2626;
     }
@@ -1478,6 +1541,18 @@
           Observações
           <textarea id="leadObservacoes" placeholder="Notas comerciais, preferências, histórico de contato..."></textarea>
         </label>
+        <div class="lead-history">
+          <div class="lead-history-title">Notas internas e timeline</div>
+          <div class="lead-note-box">
+            <textarea id="leadNoteInput" placeholder="Adicionar nota interna: cliente quente, retornar amanhã, pediu financiamento..."></textarea>
+            <button type="button" id="saveLeadNoteButton">Adicionar nota</button>
+          </div>
+          <div class="timeline-list" id="leadTimelineList">
+            <div class="timeline-item">
+              <div class="timeline-message">Abra um lead para carregar a timeline.</div>
+            </div>
+          </div>
+        </div>
         <div class="admin-lead-tools manager-only">
           <label class="modal-field">
             Mover para broker
@@ -2432,6 +2507,82 @@
       return null;
     }
 
+    function renderLeadTimeline(events) {
+      const list = document.getElementById("leadTimelineList");
+      if (!events || events.length === 0) {
+        list.innerHTML = `
+          <div class="timeline-item">
+            <div class="timeline-message">Nenhum evento registrado para este lead ainda.</div>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = events.map((event) => `
+        <div class="timeline-item">
+          <div class="timeline-meta">
+            <span>${escapeHtml(event.event_type || "EVENTO")}</span>
+            <span>${escapeHtml(event.actor_name || "Sistema")}</span>
+            <span>${escapeHtml(timeAgo(event.created_at))}</span>
+          </div>
+          <div class="timeline-message">${escapeHtml(event.message || "")}</div>
+        </div>
+      `).join("");
+    }
+
+    async function loadLeadTimeline(leadId) {
+      const list = document.getElementById("leadTimelineList");
+      list.innerHTML = `
+        <div class="timeline-item">
+          <div class="timeline-message">Carregando timeline...</div>
+        </div>
+      `;
+
+      const response = await fetch(`${API_BASE}/leads/${leadId}/events`, {
+        headers: {
+          "x-actor-id": String(currentUser.id)
+        }
+      });
+
+      if (!response.ok) {
+        list.innerHTML = `
+          <div class="timeline-item">
+            <div class="timeline-message">Nao foi possivel carregar a timeline.</div>
+          </div>
+        `;
+        return;
+      }
+
+      renderLeadTimeline(await response.json());
+    }
+
+    async function addLeadNote() {
+      const leadId = document.getElementById("leadId").value;
+      const input = document.getElementById("leadNoteInput");
+      const message = input.value.trim();
+
+      if (!leadId || !message) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/leads/${leadId}/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-actor-id": String(currentUser.id)
+        },
+        body: JSON.stringify({ message })
+      });
+
+      if (!response.ok) {
+        alert("Nao foi possivel salvar a nota");
+        return;
+      }
+
+      input.value = "";
+      await loadLeadTimeline(leadId);
+    }
+
     function openLeadModal(lead) {
       if (!lead) {
         return;
@@ -2454,6 +2605,10 @@
       document.getElementById("leadEndereco").value = lead.endereco || "";
       document.getElementById("leadObservacoes").value = lead.observacoes || "";
       document.getElementById("leadBrokerTarget").value = lead.assigned_to_user_id || "";
+      document.getElementById("leadNoteInput").value = "";
+      loadLeadTimeline(lead.id).catch(() => {
+        renderLeadTimeline([]);
+      });
       leadModal.classList.add("open");
     }
 
@@ -3440,6 +3595,7 @@
     document.getElementById("returnLeadBankButton").addEventListener("click", returnLeadToBank);
     document.getElementById("returnBulkButton").addEventListener("click", returnBulkLeadsToBank);
     document.getElementById("assignSmartButton").addEventListener("click", sendToBroker);
+    document.getElementById("saveLeadNoteButton").addEventListener("click", addLeadNote);
     document.getElementById("refreshInventoryButton").addEventListener("click", loadInventory);
     document.getElementById("assignSegment").addEventListener("change", updateInventoryCount);
     document.getElementById("assignCountry").addEventListener("change", updateInventoryCount);

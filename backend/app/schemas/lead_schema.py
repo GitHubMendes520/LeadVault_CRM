@@ -55,3 +55,21 @@ class LeadUpdate(BaseModel):
     valor_negocio: float | None = None
     pipeline: str | None = None
     assigned_to_user_id: int | None = None
+
+
+class LeadEventCreate(BaseModel):
+    message: str
+
+
+class LeadEventResponse(BaseModel):
+    id: int
+    lead_id: int
+    actor_id: int | None = None
+    actor_name: str | None = None
+    event_type: str
+    message: str
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+    }

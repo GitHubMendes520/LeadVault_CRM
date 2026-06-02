@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password, verify_password
 from app.database.connection import SessionLocal
 from app.models.lead import Lead
+from app.models.lead_event import LeadEvent
 from app.models.user import User
 from app.schemas.user_schema import AssignLeadsRequest, LoginRequest, ReturnLeadsRequest, UserCreate, UserResponse, UserUpdate
 
@@ -75,6 +76,25 @@ def manager_team_broker_ids(db: Session, manager_id: int):
             .all()
         )
     ]
+
+
+def actor_label(actor: User | None):
+    if not actor:
+        return "Sistema"
+
+    return actor.full_name or actor.username
+
+
+def add_lead_event(db: Session, lead: Lead, actor: User | None, event_type: str, message: str):
+    db.add(
+        LeadEvent(
+            lead_id=lead.id,
+            actor_id=actor.id if actor else None,
+            actor_name=actor_label(actor),
+            event_type=event_type,
+            message=message,
+        )
+    )
 
 
 @router.post("/login", response_model=UserResponse)
@@ -417,6 +437,13 @@ def assign_leads(
         lead.pipeline = "NOVO LEAD"
         lead.pipeline_updated_at = datetime.utcnow()
         lead.updated_at = datetime.utcnow()
+        add_lead_event(
+            db,
+            lead,
+            actor,
+            "DISTRIBUICAO",
+            f"Lead enviado para {broker.full_name or broker.username} em Aguardando Atendimento",
+        )
 
     db.commit()
 
@@ -455,10 +482,18 @@ def return_leads_to_bank(
     leads = query.all()
 
     for lead in leads:
+        previous_broker_id = lead.assigned_to_user_id
         lead.assigned_to_user_id = None
         lead.pipeline = "NOVO LEAD"
         lead.pipeline_updated_at = datetime.utcnow()
         lead.updated_at = datetime.utcnow()
+        add_lead_event(
+            db,
+            lead,
+            actor,
+            "BANCO",
+            f"Lead retornou ao banco em lote vindo do broker {previous_broker_id}",
+        )
 
     db.commit()
 

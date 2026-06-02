@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import SessionLocal
 from app.models.lead import Lead
+from app.models.lead_event import LeadEvent
 from app.models.user import User
-from app.schemas.lead_schema import LeadAssignUpdate, LeadPipelineUpdate, LeadResponse, LeadUpdate
+from app.schemas.lead_schema import LeadAssignUpdate, LeadEventCreate, LeadEventResponse, LeadPipelineUpdate, LeadResponse, LeadUpdate
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
@@ -94,6 +95,25 @@ def ensure_lead_visible_to_actor(db: Session, lead: Lead, actor: User | None):
         return
 
     raise HTTPException(status_code=403, detail="Lead fora da sua estrutura")
+
+
+def actor_label(actor: User | None):
+    if not actor:
+        return "Sistema"
+
+    return actor.full_name or actor.username
+
+
+def add_lead_event(db: Session, lead: Lead, actor: User | None, event_type: str, message: str):
+    db.add(
+        LeadEvent(
+            lead_id=lead.id,
+            actor_id=actor.id if actor else None,
+            actor_name=actor_label(actor),
+            event_type=event_type,
+            message=message,
+        )
+    )
 
 
 @router.get("/", response_model=list[LeadResponse])
@@ -203,6 +223,58 @@ def lead_inventory(
     }
 
 
+@router.get("/{lead_id}/events", response_model=list[LeadEventResponse])
+def list_lead_events(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    actor: User | None = Depends(get_actor),
+):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead nao encontrado")
+
+    ensure_lead_visible_to_actor(db, lead, actor)
+
+    return (
+        db.query(LeadEvent)
+        .filter(LeadEvent.lead_id == lead.id)
+        .order_by(LeadEvent.created_at.desc(), LeadEvent.id.desc())
+        .limit(100)
+        .all()
+    )
+
+
+@router.post("/{lead_id}/events", response_model=LeadEventResponse)
+def create_lead_note(
+    lead_id: int,
+    payload: LeadEventCreate,
+    db: Session = Depends(get_db),
+    actor: User | None = Depends(get_actor),
+):
+    note = payload.message.strip()
+    if not note:
+        raise HTTPException(status_code=400, detail="Nota vazia")
+
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead nao encontrado")
+
+    ensure_lead_visible_to_actor(db, lead, actor)
+
+    event = LeadEvent(
+        lead_id=lead.id,
+        actor_id=actor.id if actor else None,
+        actor_name=actor_label(actor),
+        event_type="NOTA",
+        message=note,
+    )
+    db.add(event)
+    lead.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(event)
+    return event
+
+
 @router.patch("/{lead_id}/pipeline", response_model=LeadResponse)
 def update_lead_pipeline(
     lead_id: int,
@@ -221,7 +293,15 @@ def update_lead_pipeline(
 
     ensure_lead_visible_to_actor(db, lead, actor)
     if lead.pipeline != stage:
+        previous_stage = lead.pipeline or "SEM ETAPA"
         lead.pipeline_updated_at = datetime.utcnow()
+        add_lead_event(
+            db,
+            lead,
+            actor,
+            "PIPELINE",
+            f"Moveu de {previous_stage} para {stage}",
+        )
     lead.pipeline = stage
     lead.updated_at = datetime.utcnow()
     db.commit()
@@ -244,8 +324,16 @@ def assign_lead(
     if actor.role == "GERENTE" and payload.assigned_to_user_id not in broker_ids_for_manager(db, actor.id):
         raise HTTPException(status_code=403, detail="Gerente pode mover lead apenas dentro da propria equipe")
 
+    previous_broker_id = lead.assigned_to_user_id
     lead.assigned_to_user_id = payload.assigned_to_user_id
     lead.updated_at = datetime.utcnow()
+    add_lead_event(
+        db,
+        lead,
+        actor,
+        "ATRIBUICAO",
+        f"Broker alterado de {previous_broker_id or 'banco'} para {payload.assigned_to_user_id or 'banco'}",
+    )
     db.commit()
     db.refresh(lead)
     return lead
@@ -266,6 +354,7 @@ def return_lead_to_bank(
     lead.pipeline = "NOVO LEAD"
     lead.pipeline_updated_at = datetime.utcnow()
     lead.updated_at = datetime.utcnow()
+    add_lead_event(db, lead, actor, "BANCO", "Lead voltou para o banco")
     db.commit()
     db.refresh(lead)
     return lead
@@ -282,6 +371,7 @@ def delete_lead(
         raise HTTPException(status_code=404, detail="Lead nao encontrado")
 
     ensure_lead_visible_to_actor(db, lead, actor)
+    add_lead_event(db, lead, actor, "EXCLUSAO", "Lead excluido definitivamente")
     db.delete(lead)
     db.commit()
     return {"deleted": True, "lead_id": lead_id}
@@ -306,13 +396,51 @@ def update_lead(
         if stage not in PIPELINE_STAGES:
             raise HTTPException(status_code=400, detail="Etapa de pipeline invalida")
         if lead.pipeline != stage:
+            previous_stage = lead.pipeline or "SEM ETAPA"
             lead.pipeline_updated_at = datetime.utcnow()
+            add_lead_event(
+                db,
+                lead,
+                actor,
+                "PIPELINE",
+                f"Moveu de {previous_stage} para {stage}",
+            )
         updates["pipeline"] = stage
+
+    tracked_fields = {
+        "nome",
+        "contato",
+        "email",
+        "site",
+        "instagram",
+        "linkedin",
+        "facebook",
+        "redes_sociais",
+        "nicho",
+        "pais",
+        "score",
+        "valor_negocio",
+        "endereco",
+        "observacoes",
+    }
+    changed_fields = [
+        field
+        for field, value in updates.items()
+        if field in tracked_fields and str(getattr(lead, field, "") or "") != str(value or "")
+    ]
 
     for field, value in updates.items():
         setattr(lead, field, value)
 
     lead.updated_at = datetime.utcnow()
+    if changed_fields:
+        add_lead_event(
+            db,
+            lead,
+            actor,
+            "EDICAO",
+            f"Editou dados do lead: {', '.join(changed_fields)}",
+        )
     db.commit()
     db.refresh(lead)
     return lead
