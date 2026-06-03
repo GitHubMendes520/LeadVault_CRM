@@ -1,17 +1,38 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+ENV_FILE = PROJECT_ROOT / ".env"
+DEFAULT_DATABASE_URLS = {
+    "",
+    "postgresql://user@localhost/leadvault_crm",
+    "postgresql://user:password@localhost:5432/leadvault_crm",
+}
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user@localhost/leadvault_crm")
+load_dotenv(ENV_FILE)
+
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL)
+if DATABASE_URL in DEFAULT_DATABASE_URLS:
+    env_hint = (
+        f"Arquivo esperado: {ENV_FILE}"
+        if ENV_FILE.exists()
+        else f"Crie {ENV_FILE} a partir de {PROJECT_ROOT / '.env.example'}"
+    )
+    raise RuntimeError(
+        "DATABASE_URL nao configurada corretamente. "
+        "O LeadVault nao vai mais cair para localhost automaticamente. "
+        f"{env_hint}."
+    )
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(
     autocommit=False,
