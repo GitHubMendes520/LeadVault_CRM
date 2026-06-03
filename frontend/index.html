@@ -329,6 +329,18 @@
       font-weight: 700;
     }
 
+    .theme-select {
+      min-height: 42px;
+      min-width: 180px;
+      border: 1px solid #bdc9dc;
+      border-radius: 4px;
+      padding: 0 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      background: var(--panel);
+    }
+
     .admin-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(150px, 1fr));
@@ -1275,6 +1287,7 @@
             <option value="en">English · UK/EUA</option>
             <option value="es">Español · México</option>
           </select>
+          <select id="loginTheme" title="Aparência"></select>
           <input id="loginUser" placeholder="Usuário" autocomplete="off" autocapitalize="none" spellcheck="false">
           <input id="loginPassword" placeholder="Senha" type="password" autocomplete="off">
           <button id="loginButton" type="submit">Entrar</button>
@@ -1315,6 +1328,7 @@
     </nav>
     <div class="spacer"></div>
     <button class="support-button" id="supportButton" type="button">Suporte</button>
+    <select id="appTheme" class="theme-select" title="Aparência"></select>
     <div class="user-pill" id="sessionUser">root <span>Administrador</span></div>
     <button class="ghost logout-button" id="logoutButton">Sair</button>
   </header>
@@ -1740,6 +1754,9 @@
         loginPasswordPlaceholder: "Senha",
         loginButton: "Entrar",
         loginNote: "Use as credenciais recebidas pelo administrador da operação.",
+        appearanceTitle: "Aparência",
+        themeClassic: "Clássico claro",
+        themePremium: "Premium dark",
         nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Suporte", "Usuários"],
         supportButton: "Suporte",
         supportTitle: "Suporte LeadVault",
@@ -1850,6 +1867,9 @@
         loginPasswordPlaceholder: "Password",
         loginButton: "Sign in",
         loginNote: "Use the credentials provided by your operation administrator.",
+        appearanceTitle: "Appearance",
+        themeClassic: "Classic light",
+        themePremium: "Premium dark",
         nav: ["Sales", "Leads", "Service", "Reports", "Support", "Users"],
         supportButton: "Support",
         supportTitle: "LeadVault Support",
@@ -1968,6 +1988,9 @@
         loginPasswordPlaceholder: "Contraseña",
         loginButton: "Entrar",
         loginNote: "Usa las credenciales recibidas por el administrador de la operación.",
+        appearanceTitle: "Apariencia",
+        themeClassic: "Clásico claro",
+        themePremium: "Premium dark",
         nav: ["Ventas", "Leads", "Atención", "Reportes", "Soporte", "Usuarios"],
         supportButton: "Soporte",
         supportTitle: "Soporte LeadVault",
@@ -2110,6 +2133,78 @@
     let userRefreshTimer = null;
     let boardClockTimer = null;
     let currentLanguage = localStorage.getItem("leadvault_language") || "pt";
+    let currentTheme = "classic";
+
+    function normalizeTheme(theme) {
+      return theme === "premium" ? "premium" : "classic";
+    }
+
+    function themeStorageKey(user = null) {
+      const username = typeof user === "string" ? user : user?.username;
+      return username
+        ? `leadvault_theme_${String(username).trim().toLowerCase()}`
+        : "leadvault_theme_guest";
+    }
+
+    function hasStoredTheme(user = null) {
+      return Boolean(localStorage.getItem(themeStorageKey(user)));
+    }
+
+    function getStoredTheme(user = null) {
+      const fallbackTheme = localStorage.getItem(themeStorageKey(null));
+      return normalizeTheme(localStorage.getItem(themeStorageKey(user)) || fallbackTheme || "classic");
+    }
+
+    function saveThemePreference(theme, user = null) {
+      localStorage.setItem(themeStorageKey(user), normalizeTheme(theme));
+    }
+
+    function renderThemeSelects() {
+      const options = `
+        <option value="classic">${t("themeClassic")}</option>
+        <option value="premium">${t("themePremium")}</option>
+      `;
+
+      ["loginTheme", "appTheme"].forEach((id) => {
+        const select = document.getElementById(id);
+        if (!select) {
+          return;
+        }
+
+        select.innerHTML = options;
+        select.title = t("appearanceTitle");
+        select.value = currentTheme;
+      });
+    }
+
+    function applyTheme(theme, { persist = true, user = undefined } = {}) {
+      currentTheme = normalizeTheme(theme);
+      document.body.classList.toggle("theme-premium", currentTheme === "premium");
+      renderThemeSelects();
+
+      if (!persist) {
+        return;
+      }
+
+      const resolvedUser = user !== undefined
+        ? user
+        : document.body.classList.contains("logged-in") && currentUser?.username
+          ? currentUser
+          : null;
+
+      saveThemePreference(currentTheme, resolvedUser);
+      if (!resolvedUser) {
+        saveThemePreference(currentTheme, null);
+      }
+    }
+
+    function setBodyState({ loggedIn = false, mode = null } = {}) {
+      document.body.classList.remove("logged-out", "logged-in", "broker-mode", "manager-mode", "root-mode");
+      document.body.classList.add(loggedIn ? "logged-in" : "logged-out");
+      if (mode) {
+        document.body.classList.add(mode);
+      }
+    }
 
     function t(key) {
       return (translations[currentLanguage] || translations.pt)[key] ?? translations.pt[key] ?? key;
@@ -2366,6 +2461,8 @@
       if (loginLanguage) {
         loginLanguage.value = currentLanguage;
       }
+
+      renderThemeSelects();
 
       setText("#loginBadge", t("loginBadge"));
       setText("#loginHeroTitle", t("loginHeroTitle"));
@@ -2864,16 +2961,16 @@
         document.getElementById("seedBrokerButton").disabled = true;
         document.getElementById("leadSendQuantity").disabled = true;
         document.getElementById("createBrokerButton").disabled = true;
-        document.body.className = "logged-in broker-mode";
+        setBodyState({ loggedIn: true, mode: "broker-mode" });
       } else if (currentUser.role === "GERENTE") {
-        document.body.className = "logged-in manager-mode";
+        setBodyState({ loggedIn: true, mode: "manager-mode" });
         document.getElementById("newBrokerRole").value = "BROKER";
         document.getElementById("createBrokerButton").disabled = false;
         document.getElementById("seedBrokerButton").disabled = false;
         document.getElementById("leadSendQuantity").disabled = false;
         brokerFilter.disabled = false;
       } else {
-        document.body.className = "logged-in root-mode";
+        setBodyState({ loggedIn: true, mode: "root-mode" });
         brokerFilter.disabled = false;
         document.getElementById("seedBrokerButton").disabled = false;
         document.getElementById("leadSendQuantity").disabled = false;
@@ -2943,6 +3040,9 @@
         idioma: user.idioma || currentLanguage
       };
       applyLanguage(currentUser.idioma);
+      const userTheme = hasStoredTheme(currentUser) ? getStoredTheme(currentUser) : getStoredTheme(null);
+      applyTheme(userTheme, { persist: false, user: currentUser });
+      saveThemePreference(userTheme, currentUser);
       localStorage.setItem("leadvault_user", JSON.stringify(currentUser));
       applyUserMode();
       showView("vendas");
@@ -2993,6 +3093,7 @@
 
     function logout() {
       markOffline();
+      saveThemePreference(currentTheme, null);
       localStorage.removeItem("leadvault_user");
       if (brokerRefreshTimer) {
         clearInterval(brokerRefreshTimer);
@@ -3012,12 +3113,13 @@
       }
       currentUser = { id: 1, username: "root", role: "ROOT" };
       cachedBoard = null;
-      document.body.className = "logged-out";
+      setBodyState({ loggedIn: false });
       boardEl.innerHTML = "";
       totalText.textContent = "Carregando leads...";
       document.getElementById("loginUser").value = "";
       document.getElementById("loginPassword").value = "";
       applyLanguage(currentLanguage);
+      applyTheme(getStoredTheme(null), { persist: false, user: null });
     }
 
     function syncLanguageFromCountry(countrySelectId, languageSelectId) {
@@ -3612,6 +3714,12 @@
     document.getElementById("loginLanguage").addEventListener("change", (event) => {
       applyLanguage(event.target.value);
     });
+    document.getElementById("loginTheme").addEventListener("change", (event) => {
+      applyTheme(event.target.value);
+    });
+    document.getElementById("appTheme").addEventListener("change", (event) => {
+      applyTheme(event.target.value);
+    });
     document.getElementById("newBrokerCountry").addEventListener("change", () => {
       syncLanguageFromCountry("newBrokerCountry", "newBrokerLanguage");
     });
@@ -3648,13 +3756,15 @@
       }
     });
 
+    applyTheme(getStoredTheme(null), { persist: false, user: null });
     applyLanguage(currentLanguage);
 
     const savedUser = localStorage.getItem("leadvault_user");
     if (savedUser) {
       enterDashboard(JSON.parse(savedUser)).catch(() => {
         localStorage.removeItem("leadvault_user");
-        document.body.className = "logged-out";
+        setBodyState({ loggedIn: false });
+        applyTheme(getStoredTheme(null), { persist: false, user: null });
       });
     }
   </script>
