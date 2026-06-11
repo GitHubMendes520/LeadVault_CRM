@@ -21,6 +21,8 @@ class User(Base):
     documento = Column(String)
     observacoes = Column(String)
     pais_operacao = Column(String, default="BR")
+    estado_operacao = Column(String, default="")
+    cidade_operacao = Column(String, default="")
     idioma = Column(String, default="pt")
     last_seen_at = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)

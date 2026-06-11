@@ -21,6 +21,8 @@ class UserCreate(BaseModel):
     documento: str | None = None
     observacoes: str | None = None
     pais_operacao: str | None = "BR"
+    estado_operacao: str | None = None
+    cidade_operacao: str | None = None
     idioma: str | None = "pt"
 
 
@@ -37,6 +39,8 @@ class UserUpdate(BaseModel):
     documento: str | None = None
     observacoes: str | None = None
     pais_operacao: str | None = None
+    estado_operacao: str | None = None
+    cidade_operacao: str | None = None
     idioma: str | None = None
     is_active: bool | None = None
 
@@ -54,6 +58,8 @@ class UserResponse(BaseModel):
     documento: str | None = None
     observacoes: str | None = None
     pais_operacao: str | None = None
+    estado_operacao: str | None = None
+    cidade_operacao: str | None = None
     idioma: str | None = None
     last_seen_at: datetime | None = None
     is_online: bool = False
@@ -69,6 +75,8 @@ class AssignLeadsRequest(BaseModel):
     limit: int = 100
     nicho: str | None = None
     pais: str | None = None
+    estado: str | None = None
+    cidade: str | None = None
 
 
 class ReturnLeadsRequest(BaseModel):
@@ -77,3 +85,5 @@ class ReturnLeadsRequest(BaseModel):
     all: bool = False
     nicho: str | None = None
     pais: str | None = None
+    estado: str | None = None
+    cidade: str | None = None

@@ -1372,6 +1372,12 @@
         <select id="assignCountry">
           <option value="">Todos os países</option>
         </select>
+        <select id="assignState">
+          <option value="">Todos os estados</option>
+        </select>
+        <select id="assignCity">
+          <option value="">Todas as cidades</option>
+        </select>
         <input id="assignQuantity" type="number" min="1" step="1" value="100" placeholder="Quantidade">
         <button id="assignSmartButton">Enviar leads filtrados</button>
         <button class="ghost" id="refreshInventoryButton">Atualizar estoque</button>
@@ -1389,6 +1395,8 @@
         </select>
         <input id="returnSegment" placeholder="Segmento / nicho">
         <input id="returnCountry" placeholder="País">
+        <input id="returnState" placeholder="Estado">
+        <input id="returnCity" placeholder="Cidade">
         <input id="returnQuantity" type="number" min="1" step="1" value="100" placeholder="Quantidade">
         <label class="checkbox-line">
           <input id="returnAllLeads" type="checkbox">
@@ -1466,6 +1474,8 @@
             <option value="UK">UK · Londres</option>
             <option value="US">EUA</option>
           </select>
+          <input id="newBrokerState" placeholder="estado / provincia">
+          <input id="newBrokerCity" placeholder="cidade">
           <select id="newBrokerLanguage">
             <option value="pt">Português</option>
             <option value="en">English</option>
@@ -1536,6 +1546,14 @@
         <label class="modal-field">
           País
           <input id="leadPais">
+        </label>
+        <label class="modal-field">
+          Estado
+          <input id="leadEstado">
+        </label>
+        <label class="modal-field">
+          Cidade
+          <input id="leadCidade">
         </label>
         <label class="modal-field">
           Score
@@ -1624,6 +1642,14 @@
             <option value="UK">UK · Londres</option>
             <option value="US">EUA</option>
           </select>
+        </label>
+        <label class="modal-field">
+          Estado / província
+          <input id="editUserState" placeholder="Estado / província">
+        </label>
+        <label class="modal-field">
+          Cidade principal
+          <input id="editUserCity" placeholder="Cidade principal">
         </label>
         <label class="modal-field">
           Idioma da tela
@@ -1793,11 +1819,13 @@
         sendBroker: "Enviar ao Broker",
         profileTitle: "Meu perfil",
         editProfile: "Editar perfil",
-        distributeTitle: "Distribuir por segmento e país",
+        distributeTitle: "Distribuir por segmento, país, estado e cidade",
         selectBroker: "Selecione broker",
         allBrokers: "Todos os brokers",
         allSegments: "Todos os segmentos",
         allCountries: "Todos os países",
+        allStates: "Todos os estados",
+        allCities: "Todas as cidades",
         sendFiltered: "Enviar leads filtrados",
         refreshStock: "Atualizar estoque",
         freeFilter: "Leads livres neste filtro:",
@@ -1805,6 +1833,8 @@
         returnTitle: "Voltar leads ao banco",
         segmentPlaceholder: "Segmento / nicho",
         countryPlaceholder: "País",
+        statePlaceholder: "Estado",
+        cityPlaceholder: "Cidade",
         all: "Todos",
         returnBank: "Voltar ao banco",
         createUserTitle: "Cadastrar usuário autorizado",
@@ -1836,7 +1866,7 @@
         call: "Ligar",
         contact: "Contato",
         leads: "leads",
-        noLeadsForFilter: "Nao ha leads livres para esse segmento/pais",
+        noLeadsForFilter: "Nao ha leads livres para este filtro",
         selectBrokerAlert: "Selecione um broker antes de enviar leads",
         invalidQty: "Informe uma quantidade valida a partir de 1",
         loginInvalid: "Login invalido",
@@ -1906,11 +1936,13 @@
         sendBroker: "Send to Broker",
         profileTitle: "My profile",
         editProfile: "Edit profile",
-        distributeTitle: "Distribute by segment and country",
+        distributeTitle: "Distribute by segment, country, state, and city",
         selectBroker: "Select broker",
         allBrokers: "All brokers",
         allSegments: "All segments",
         allCountries: "All countries",
+        allStates: "All states",
+        allCities: "All cities",
         sendFiltered: "Send filtered leads",
         refreshStock: "Refresh stock",
         freeFilter: "Free leads in this filter:",
@@ -1918,6 +1950,8 @@
         returnTitle: "Return leads to database",
         segmentPlaceholder: "Segment / niche",
         countryPlaceholder: "Country",
+        statePlaceholder: "State",
+        cityPlaceholder: "City",
         all: "All",
         returnBank: "Return to database",
         createUserTitle: "Create authorized user",
@@ -1949,7 +1983,7 @@
         call: "Call",
         contact: "Contact",
         leads: "leads",
-        noLeadsForFilter: "No free leads for this segment/country",
+        noLeadsForFilter: "There are no free leads for this filter",
         selectBrokerAlert: "Select a broker before sending leads",
         invalidQty: "Enter a valid quantity starting at 1",
         loginInvalid: "Invalid login",
@@ -2027,11 +2061,13 @@
         sendBroker: "Enviar al Broker",
         profileTitle: "Mi perfil",
         editProfile: "Editar perfil",
-        distributeTitle: "Distribuir por segmento y país",
+        distributeTitle: "Distribuir por segmento, país, estado y ciudad",
         selectBroker: "Seleccione broker",
         allBrokers: "Todos los brokers",
         allSegments: "Todos los segmentos",
         allCountries: "Todos los países",
+        allStates: "Todos los estados",
+        allCities: "Todas las ciudades",
         sendFiltered: "Enviar leads filtrados",
         refreshStock: "Actualizar stock",
         freeFilter: "Leads libres en este filtro:",
@@ -2039,6 +2075,8 @@
         returnTitle: "Volver leads al banco",
         segmentPlaceholder: "Segmento / nicho",
         countryPlaceholder: "País",
+        statePlaceholder: "Estado",
+        cityPlaceholder: "Ciudad",
         all: "Todos",
         returnBank: "Volver al banco",
         createUserTitle: "Registrar usuario autorizado",
@@ -2070,7 +2108,7 @@
         call: "Llamar",
         contact: "Contacto",
         leads: "leads",
-        noLeadsForFilter: "No hay leads libres para este segmento/país",
+        noLeadsForFilter: "No hay leads libres para este filtro",
         selectBrokerAlert: "Seleccione un broker antes de enviar leads",
         invalidQty: "Informe una cantidad válida desde 1",
         loginInvalid: "Login inválido",
@@ -2336,6 +2374,82 @@
       };
     }
 
+    function normalizeGeo(value) {
+      return String(value || "").trim();
+    }
+
+    function hasSelectValue(select, value) {
+      return Array.from(select?.options || []).some((option) => option.value === value);
+    }
+
+    function filteredInventoryRows(filters = {}) {
+      const rows = cachedInventory?.combinacoes || [];
+      return rows.filter((item) => {
+        const rowSegment = normalizeGeo(item.nicho);
+        const rowCountry = normalizeGeo(item.pais);
+        const rowState = normalizeGeo(item.estado);
+        const rowCity = normalizeGeo(item.cidade);
+
+        return (!filters.nicho || rowSegment === normalizeGeo(filters.nicho))
+          && (!filters.pais || rowCountry === normalizeGeo(filters.pais))
+          && (!filters.estado || rowState === normalizeGeo(filters.estado))
+          && (!filters.cidade || rowCity === normalizeGeo(filters.cidade));
+      });
+    }
+
+    function buildGeoOptions(rows, key, emptyLabel) {
+      const totals = new Map();
+
+      rows.forEach((item) => {
+        const value = normalizeGeo(item[key]);
+        if (!value) {
+          return;
+        }
+
+        totals.set(value, (totals.get(value) || 0) + Number(item.total || 0));
+      });
+
+      return `<option value="">${emptyLabel}</option>` + Array.from(totals.entries())
+        .sort((a, b) => a[0].localeCompare(b[0], translations[currentLanguage].locale))
+        .map(([value, total]) => `<option value="${escapeHtml(value)}">${escapeHtml(value)} (${total})</option>`)
+        .join("");
+    }
+
+    function refreshAssignGeoOptions(preferred = {}) {
+      const stateSelect = document.getElementById("assignState");
+      const citySelect = document.getElementById("assignCity");
+      const nicho = document.getElementById("assignSegment").value;
+      const pais = document.getElementById("assignCountry").value;
+      const currentState = preferred.state !== undefined ? preferred.state : stateSelect.value;
+      const currentCity = preferred.city !== undefined ? preferred.city : citySelect.value;
+
+      const rowsForStates = filteredInventoryRows({ nicho, pais });
+      stateSelect.innerHTML = buildGeoOptions(rowsForStates, "estado", t("allStates"));
+      stateSelect.value = hasSelectValue(stateSelect, currentState) ? currentState : "";
+
+      const rowsForCities = filteredInventoryRows({
+        nicho,
+        pais,
+        estado: stateSelect.value
+      });
+      citySelect.innerHTML = buildGeoOptions(rowsForCities, "cidade", t("allCities"));
+      citySelect.value = hasSelectValue(citySelect, currentCity) ? currentCity : "";
+    }
+
+    function formatUserTerritory(user) {
+      const country = userCountries[user.pais_operacao || "BR"] || {
+        label: user.pais_operacao || t("countryMissing"),
+        language: user.idioma || "pt"
+      };
+
+      return [
+        country.label,
+        normalizeGeo(user.estado_operacao),
+        normalizeGeo(user.cidade_operacao),
+        countryLanguageName(user.idioma || country.language)
+      ].filter(Boolean).join(" · ");
+    }
+
     function cleanPhoneNumber(value) {
       return String(value || "").replace(/\D/g, "");
     }
@@ -2510,8 +2624,14 @@
       setText("#createBrokerButton", t("register"));
       setPlaceholder("#newBrokerUser", t("userPlaceholder"));
       setPlaceholder("#newBrokerPassword", t("passwordPlaceholder"));
+      setPlaceholder("#newBrokerState", t("statePlaceholder"));
+      setPlaceholder("#newBrokerCity", t("cityPlaceholder"));
       setPlaceholder("#returnSegment", t("segmentPlaceholder"));
       setPlaceholder("#returnCountry", t("countryPlaceholder"));
+      setPlaceholder("#returnState", t("statePlaceholder"));
+      setPlaceholder("#returnCity", t("cityPlaceholder"));
+      setPlaceholder("#editUserState", t("statePlaceholder"));
+      setPlaceholder("#editUserCity", t("cityPlaceholder"));
 
       const panels = document.querySelectorAll(".panel-title");
       [
@@ -2561,6 +2681,12 @@
       const niche = [lead.nicho, lead.pais].filter(Boolean).join(" · ") || "SEM CLASSIFICACAO";
       const contact = lead.contato || t("contactMissing");
       const country = countryInfo(lead.pais);
+      const territory = [
+        country.label,
+        normalizeGeo(lead.estado),
+        normalizeGeo(lead.cidade),
+        country.language
+      ].filter(Boolean).join(" · ");
       const value = Number(lead.valor_negocio || 0);
       const stageClass = `stage-${(lead.pipeline || "NOVO LEAD").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
       const staleTime = timeAgo(lead.pipeline_updated_at || lead.updated_at || lead.created_at);
@@ -2575,7 +2701,7 @@
             </div>
           </div>
           <div class="card-meta">${escapeHtml(niche)}</div>
-          <div class="lead-country"><span class="flag">${country.flag}</span>${escapeHtml(country.label)} · ${escapeHtml(country.language)}</div>
+          <div class="lead-country"><span class="flag">${country.flag}</span>${escapeHtml(territory)}</div>
           <div class="status">${t("status")}: <span>${escapeHtml(stageLabel(lead.pipeline))}</span></div>
           <div class="status">${t("score")}: <span>${lead.score ?? 0}</span></div>
           <div class="deal-value">${t("deal")}: ${formatCurrency(value)}</div>
@@ -2698,6 +2824,8 @@
       document.getElementById("leadRedesSociais").value = lead.redes_sociais || "";
       document.getElementById("leadNicho").value = lead.nicho || "";
       document.getElementById("leadPais").value = lead.pais || "";
+      document.getElementById("leadEstado").value = lead.estado || "";
+      document.getElementById("leadCidade").value = lead.cidade || "";
       document.getElementById("leadScore").value = lead.score ?? "";
       document.getElementById("leadValorNegocio").value = lead.valor_negocio ?? "";
       document.getElementById("leadPipeline").value = lead.pipeline || "NOVO LEAD";
@@ -2726,6 +2854,8 @@
       document.getElementById("editUserRole").value = user.role || "BROKER";
       document.getElementById("editUserManager").value = user.manager_id || "";
       document.getElementById("editUserCountry").value = user.pais_operacao || "BR";
+      document.getElementById("editUserState").value = user.estado_operacao || "";
+      document.getElementById("editUserCity").value = user.cidade_operacao || "";
       document.getElementById("editUserLanguage").value = user.idioma || "pt";
       document.getElementById("editUserPassword").value = "";
       document.getElementById("editCreci").value = user.creci || "";
@@ -2794,7 +2924,7 @@
         const allLeads = data.board[stage] || [];
         const leads = searchTerm
           ? allLeads.filter((lead) => {
-              const text = `${lead.nome || ""} ${lead.email || ""} ${lead.contato || ""} ${lead.nicho || ""} ${lead.pais || ""}`.toLowerCase();
+              const text = `${lead.nome || ""} ${lead.email || ""} ${lead.contato || ""} ${lead.nicho || ""} ${lead.pais || ""} ${lead.estado || ""} ${lead.cidade || ""}`.toLowerCase();
               return text.includes(searchTerm);
             })
           : allLeads;
@@ -2855,14 +2985,13 @@
 
       const nicho = document.getElementById("assignSegment").value;
       const pais = document.getElementById("assignCountry").value;
+      const estado = document.getElementById("assignState").value;
+      const cidade = document.getElementById("assignCity").value;
       let available = cachedInventory.total_livre || 0;
 
-      if (nicho || pais) {
-        available = cachedInventory.combinacoes
-          .filter((item) => {
-          return (!nicho || item.nicho === nicho) && (!pais || item.pais === pais);
-          })
-          .reduce((sum, item) => sum + item.total, 0);
+      if (nicho || pais || estado || cidade) {
+        available = filteredInventoryRows({ nicho, pais, estado, cidade })
+          .reduce((sum, item) => sum + Number(item.total || 0), 0);
       }
 
       document.getElementById("assignAvailableCount").textContent = available;
@@ -2882,14 +3011,32 @@
         return;
       }
 
+      const segmentSelect = document.getElementById("assignSegment");
+      const countrySelect = document.getElementById("assignCountry");
+      const stateSelect = document.getElementById("assignState");
+      const citySelect = document.getElementById("assignCity");
+      const previousSegment = segmentSelect.value;
+      const previousCountry = countrySelect.value;
+      const previousState = stateSelect.value;
+      const previousCity = citySelect.value;
+
       cachedInventory = await response.json();
-      document.getElementById("assignSegment").innerHTML = `<option value="">${t("allSegments")}</option>` + cachedInventory.nichos.map((item) => {
+      segmentSelect.innerHTML = `<option value="">${t("allSegments")}</option>` + cachedInventory.nichos.map((item) => {
         return `<option value="${item.nome}">${item.nome} (${item.total})</option>`;
       }).join("");
-      document.getElementById("assignCountry").innerHTML = `<option value="">${t("allCountries")}</option>` + cachedInventory.paises.map((item) => {
+      countrySelect.innerHTML = `<option value="">${t("allCountries")}</option>` + cachedInventory.paises.map((item) => {
         const country = countryInfo(item.nome);
         return `<option value="${item.nome}">${country.flag} ${country.label} · ${country.language} (${item.total})</option>`;
       }).join("");
+
+      if (hasSelectValue(segmentSelect, previousSegment)) {
+        segmentSelect.value = previousSegment;
+      }
+      if (hasSelectValue(countrySelect, previousCountry)) {
+        countrySelect.value = previousCountry;
+      }
+      refreshAssignGeoOptions({ state: previousState, city: previousCity });
+
       document.getElementById("metricFreeLeads").textContent = cachedInventory.total_livre || 0;
       document.getElementById("metricBank").textContent = cachedInventory.total_livre || 0;
       document.getElementById("metricSegments").textContent = cachedInventory.nichos.length;
@@ -2912,6 +3059,8 @@
       const quantity = Number(quantityInput);
       const nicho = document.getElementById("assignSegment").value.trim();
       const pais = document.getElementById("assignCountry").value.trim();
+      const estado = document.getElementById("assignState").value.trim();
+      const cidade = document.getElementById("assignCity").value.trim();
 
       if (!brokerId) {
         alert(t("selectBrokerAlert"));
@@ -2940,7 +3089,9 @@
           broker_id: Number(brokerId),
           limit: quantity,
           nicho: nicho || null,
-          pais: pais || null
+          pais: pais || null,
+          estado: estado || null,
+          cidade: cidade || null
         })
       });
       const result = await response.json();
@@ -3260,6 +3411,8 @@
       const role = document.getElementById("newBrokerRole").value;
       const managerId = document.getElementById("newBrokerManager").value;
       const paisOperacao = document.getElementById("newBrokerCountry").value;
+      const estadoOperacao = document.getElementById("newBrokerState").value.trim();
+      const cidadeOperacao = document.getElementById("newBrokerCity").value.trim();
       const idioma = document.getElementById("newBrokerLanguage").value;
 
       if (!username || !password) {
@@ -3286,6 +3439,8 @@
           manager_id: role === "BROKER" && managerId ? Number(managerId) : null,
           full_name: username,
           pais_operacao: paisOperacao,
+          estado_operacao: estadoOperacao,
+          cidade_operacao: cidadeOperacao,
           idioma
         })
       });
@@ -3296,6 +3451,8 @@
       }
 
       document.getElementById("newBrokerUser").value = "";
+      document.getElementById("newBrokerState").value = "";
+      document.getElementById("newBrokerCity").value = "";
       await loadBrokers();
     }
 
@@ -3359,7 +3516,7 @@
             <span>
               ${broker.username}<br>
               <small>${broker.role}${managerName ? ` · Gerente: ${escapeHtml(managerName)}` : ""}</small><br>
-              <small>${country.label} · ${countryLanguageName(broker.idioma || country.language)}</small>
+              <small>${escapeHtml(formatUserTerritory(broker))}</small>
               <span class="presence-badge ${presenceClass}">
                 <span class="presence-dot"></span>${escapeHtml(presenceLabel(broker))}
               </span>
@@ -3466,6 +3623,8 @@
           redes_sociais: document.getElementById("leadRedesSociais").value,
           nicho: document.getElementById("leadNicho").value,
           pais: document.getElementById("leadPais").value,
+          estado: document.getElementById("leadEstado").value,
+          cidade: document.getElementById("leadCidade").value,
           score: scoreValue === "" ? null : Number(scoreValue),
           valor_negocio: valueInput === "" ? 0 : Number(valueInput),
           pipeline: document.getElementById("leadPipeline").value,
@@ -3494,6 +3653,8 @@
         documento: document.getElementById("editDocumento").value,
         observacoes: document.getElementById("editUserObservacoes").value,
         pais_operacao: document.getElementById("editUserCountry").value,
+        estado_operacao: document.getElementById("editUserState").value,
+        cidade_operacao: document.getElementById("editUserCity").value,
         idioma: document.getElementById("editUserLanguage").value
       };
 
@@ -3625,6 +3786,8 @@
       const brokerId = document.getElementById("returnBroker").value;
       const nicho = document.getElementById("returnSegment").value.trim();
       const pais = document.getElementById("returnCountry").value.trim();
+      const estado = document.getElementById("returnState").value.trim();
+      const cidade = document.getElementById("returnCity").value.trim();
 
       if (!all && (!Number.isInteger(quantity) || quantity < 1)) {
         alert("Informe uma quantidade valida ou marque Todos");
@@ -3650,7 +3813,9 @@
           limit: all ? null : quantity,
           all,
           nicho: nicho || null,
-          pais: pais || null
+          pais: pais || null,
+          estado: estado || null,
+          cidade: cidade || null
         })
       });
 
@@ -3701,8 +3866,19 @@
     document.getElementById("assignSmartButton").addEventListener("click", sendToBroker);
     document.getElementById("saveLeadNoteButton").addEventListener("click", addLeadNote);
     document.getElementById("refreshInventoryButton").addEventListener("click", loadInventory);
-    document.getElementById("assignSegment").addEventListener("change", updateInventoryCount);
-    document.getElementById("assignCountry").addEventListener("change", updateInventoryCount);
+    document.getElementById("assignSegment").addEventListener("change", () => {
+      refreshAssignGeoOptions();
+      updateInventoryCount();
+    });
+    document.getElementById("assignCountry").addEventListener("change", () => {
+      refreshAssignGeoOptions();
+      updateInventoryCount();
+    });
+    document.getElementById("assignState").addEventListener("change", () => {
+      refreshAssignGeoOptions();
+      updateInventoryCount();
+    });
+    document.getElementById("assignCity").addEventListener("change", updateInventoryCount);
     document.getElementById("leadSendQuantity").addEventListener("input", (event) => {
       document.getElementById("assignQuantity").value = event.target.value;
       updateInventoryCount();

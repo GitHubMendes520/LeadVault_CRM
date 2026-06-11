@@ -138,6 +138,8 @@ def list_leads(
                 Lead.site.ilike(term),
                 Lead.nicho.ilike(term),
                 Lead.pais.ilike(term),
+                Lead.estado.ilike(term),
+                Lead.cidade.ilike(term),
             )
         )
 
@@ -205,10 +207,24 @@ def lead_inventory(
         .order_by(func.count(Lead.id).desc(), Lead.pais)
         .all()
     )
+    estados = (
+        db.query(Lead.estado, func.count(Lead.id))
+        .filter(Lead.assigned_to_user_id.is_(None), Lead.estado.isnot(None), Lead.estado != "")
+        .group_by(Lead.estado)
+        .order_by(func.count(Lead.id).desc(), Lead.estado)
+        .all()
+    )
+    cidades = (
+        db.query(Lead.cidade, func.count(Lead.id))
+        .filter(Lead.assigned_to_user_id.is_(None), Lead.cidade.isnot(None), Lead.cidade != "")
+        .group_by(Lead.cidade)
+        .order_by(func.count(Lead.id).desc(), Lead.cidade)
+        .all()
+    )
     combinacoes = (
-        db.query(Lead.nicho, Lead.pais, func.count(Lead.id))
+        db.query(Lead.nicho, Lead.pais, Lead.estado, Lead.cidade, func.count(Lead.id))
         .filter(Lead.assigned_to_user_id.is_(None))
-        .group_by(Lead.nicho, Lead.pais)
+        .group_by(Lead.nicho, Lead.pais, Lead.estado, Lead.cidade)
         .all()
     )
 
@@ -216,9 +232,17 @@ def lead_inventory(
         "total_livre": total_free,
         "nichos": [{"nome": nicho, "total": total} for nicho, total in nichos],
         "paises": [{"nome": pais, "total": total} for pais, total in paises],
+        "estados": [{"nome": estado, "total": total} for estado, total in estados],
+        "cidades": [{"nome": cidade, "total": total} for cidade, total in cidades],
         "combinacoes": [
-            {"nicho": nicho, "pais": pais, "total": total}
-            for nicho, pais, total in combinacoes
+            {
+                "nicho": nicho,
+                "pais": pais,
+                "estado": estado,
+                "cidade": cidade,
+                "total": total,
+            }
+            for nicho, pais, estado, cidade, total in combinacoes
         ],
     }
 

@@ -10,37 +10,10 @@ sys.path.insert(0, str(ROOT_DIR))
 from app.database.connection import Base, engine, SessionLocal
 from app.models.lead import Lead
 from app.models.user import User
+from app.services.import_service import import_lead_records
 
 DEFAULT_SOURCE_DB = Path("/Users/user/Desktop/LeadVault_Matrix/banco/leadvault.db")
 BATCH_SIZE = 1000
-
-
-def clean_text(value):
-    if value is None:
-        return None
-
-    text = str(value).strip()
-    return text or None
-
-
-def clean_score(value):
-    if value in (None, ""):
-        return None
-
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def lead_key(lead):
-    site = lead.get("site")
-    email = lead.get("email")
-
-    if not site and not email:
-        return None
-
-    return ((site or "").lower(), (email or "").lower())
 
 
 def iter_source_leads(source_db):
@@ -53,6 +26,8 @@ def iter_source_leads(source_db):
             endereco,
             nicho,
             pais,
+            estado,
+            cidade,
             score
         FROM dados_segmentados
         WHERE COALESCE(TRIM(nome), '') <> ''
@@ -65,14 +40,16 @@ def iter_source_leads(source_db):
         for row in conn.execute(query):
             now = datetime.utcnow()
             yield {
-                "nome": clean_text(row["nome"]),
-                "contato": clean_text(row["contato"]),
-                "email": clean_text(row["email"]),
-                "site": clean_text(row["site"]),
-                "endereco": clean_text(row["endereco"]),
-                "nicho": clean_text(row["nicho"]),
-                "pais": clean_text(row["pais"]),
-                "score": clean_score(row["score"]),
+                "nome": row["nome"],
+                "contato": row["contato"],
+                "email": row["email"],
+                "site": row["site"],
+                "endereco": row["endereco"],
+                "nicho": row["nicho"],
+                "pais": row["pais"],
+                "estado": row["estado"],
+                "cidade": row["cidade"],
+                "score": row["score"],
                 "pipeline": "NOVO LEAD",
                 "pipeline_updated_at": now,
                 "created_at": now,
@@ -80,48 +57,16 @@ def iter_source_leads(source_db):
             }
 
 
-def flush_batch(session, batch):
-    if not batch:
-        return 0
-
-    session.bulk_insert_mappings(Lead, batch)
-    session.commit()
-    return len(batch)
-
-
 def import_leads(source_db):
     Base.metadata.create_all(bind=engine)
 
-    total_read = 0
-    total_inserted = 0
-    batch = []
+    records = list(iter_source_leads(source_db))
+    total_read = len(records)
 
     with SessionLocal() as session:
-        existing_keys = {
-            ((site or "").lower(), (email or "").lower())
-            for site, email in session.query(Lead.site, Lead.email).all()
-            if site or email
-        }
+        stats = import_lead_records(session, records, batch_size=BATCH_SIZE)
 
-        for lead in iter_source_leads(source_db):
-            total_read += 1
-            key = lead_key(lead)
-
-            if key and key in existing_keys:
-                continue
-
-            if key:
-                existing_keys.add(key)
-
-            batch.append(lead)
-
-            if len(batch) >= BATCH_SIZE:
-                total_inserted += flush_batch(session, batch)
-                batch.clear()
-
-        total_inserted += flush_batch(session, batch)
-
-    return total_read, total_inserted
+    return total_read, stats.inserted
 
 
 def main():

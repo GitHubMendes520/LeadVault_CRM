@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -6,11 +7,13 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.security import hash_password
 from app.database.connection import Base, SessionLocal, engine
-from app.models import lead, lead_event, support_ticket, user
+from app.models import import_job, lead, lead_event, support_ticket, user
 from app.models.user import User
+from app.routes.import_routes import router as import_router
 from app.routes.lead_routes import router as lead_router
 from app.routes.support_routes import router as support_router
 from app.routes.user_routes import router as user_router
@@ -19,6 +22,8 @@ app = FastAPI(
     title="LeadVault CRM MVP",
     version="1.0.0"
 )
+
+logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,10 +36,25 @@ app.add_middleware(
 app.include_router(lead_router)
 app.include_router(user_router)
 app.include_router(support_router)
+app.include_router(import_router)
 
 frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
 if frontend_dir.exists():
     app.mount("/assets", StaticFiles(directory=frontend_dir), name="assets")
+
+
+def ensure_index(db, primary_sql: str, *, fallback_sql: str | None = None, label: str = ""):
+    try:
+        db.execute(text(primary_sql))
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        if not fallback_sql:
+            raise
+
+        logger.warning("Falha ao criar indice %s. Aplicando fallback seguro. Motivo: %s", label or primary_sql, exc)
+        db.execute(text(fallback_sql))
+        db.commit()
 
 
 @app.on_event("startup")
@@ -47,14 +67,38 @@ def create_database_tables():
         db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS pipeline_updated_at TIMESTAMP"))
         db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS created_at TIMESTAMP"))
         db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP"))
+        db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS estado VARCHAR"))
+        db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS cidade VARCHAR"))
         db.execute(text("UPDATE leads SET pipeline_updated_at = COALESCE(pipeline_updated_at, updated_at, CURRENT_TIMESTAMP) WHERE pipeline_updated_at IS NULL"))
         db.execute(text("UPDATE leads SET created_at = COALESCE(created_at, pipeline_updated_at, CURRENT_TIMESTAMP) WHERE created_at IS NULL"))
         db.execute(text("UPDATE leads SET updated_at = COALESCE(updated_at, pipeline_updated_at, CURRENT_TIMESTAMP) WHERE updated_at IS NULL"))
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS manager_id INTEGER"))
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS pais_operacao VARCHAR DEFAULT 'BR'"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS estado_operacao VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS cidade_operacao VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS idioma VARCHAR DEFAULT 'pt'"))
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP"))
         db.commit()
+
+        ensure_index(
+            db,
+            "CREATE INDEX IF NOT EXISTS idx_leads_email_lower ON leads (LOWER(email))",
+            fallback_sql="CREATE INDEX IF NOT EXISTS idx_leads_email_lower_hash ON leads (md5(lower(coalesce(email, ''))))",
+            label="idx_leads_email_lower",
+        )
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_leads_contato ON leads (contato)")
+        ensure_index(
+            db,
+            "CREATE INDEX IF NOT EXISTS idx_leads_site_lower ON leads (LOWER(site))",
+            fallback_sql="CREATE INDEX IF NOT EXISTS idx_leads_site_lower_hash ON leads (md5(lower(coalesce(site, ''))))",
+            label="idx_leads_site_lower",
+        )
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_leads_nicho ON leads (nicho)")
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_leads_pais ON leads (pais)")
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_leads_estado ON leads (estado)")
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_leads_cidade ON leads (cidade)")
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_leads_pais_estado_cidade ON leads (pais, estado, cidade)")
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_leads_assigned_pipeline ON leads (assigned_to_user_id, pipeline)")
 
         if db.query(User).count() == 0:
             root_user = User(

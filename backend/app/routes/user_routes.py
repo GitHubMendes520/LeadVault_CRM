@@ -199,6 +199,8 @@ def broker_summary(
                 "documento": broker.documento,
                 "observacoes": broker.observacoes,
                 "pais_operacao": broker.pais_operacao,
+                "estado_operacao": broker.estado_operacao,
+                "cidade_operacao": broker.cidade_operacao,
                 "idioma": broker.idioma,
                 "last_seen_at": broker.last_seen_at,
                 "is_online": broker.is_online,
@@ -257,6 +259,8 @@ def create_user(
         documento=payload.documento,
         observacoes=payload.observacoes,
         pais_operacao=(payload.pais_operacao or "BR").upper(),
+        estado_operacao=(payload.estado_operacao or "").strip(),
+        cidade_operacao=(payload.cidade_operacao or "").strip(),
         idioma=(payload.idioma or "pt").lower(),
         is_active=True,
     )
@@ -310,6 +314,12 @@ def update_user(
     if "pais_operacao" in updates and updates["pais_operacao"]:
         updates["pais_operacao"] = updates["pais_operacao"].upper()
 
+    if "estado_operacao" in updates and updates["estado_operacao"] is not None:
+        updates["estado_operacao"] = updates["estado_operacao"].strip()
+
+    if "cidade_operacao" in updates and updates["cidade_operacao"] is not None:
+        updates["cidade_operacao"] = updates["cidade_operacao"].strip()
+
     if "idioma" in updates and updates["idioma"]:
         updates["idioma"] = updates["idioma"].lower()
 
@@ -356,6 +366,12 @@ def update_own_profile(
 
     if "pais_operacao" in updates and updates["pais_operacao"]:
         updates["pais_operacao"] = updates["pais_operacao"].upper()
+
+    if "estado_operacao" in updates and updates["estado_operacao"] is not None:
+        updates["estado_operacao"] = updates["estado_operacao"].strip()
+
+    if "cidade_operacao" in updates and updates["cidade_operacao"] is not None:
+        updates["cidade_operacao"] = updates["cidade_operacao"].strip()
 
     if "idioma" in updates and updates["idioma"]:
         updates["idioma"] = updates["idioma"].lower()
@@ -430,6 +446,12 @@ def assign_leads(
     if payload.pais:
         query = query.filter(Lead.pais == payload.pais.upper())
 
+    if payload.estado:
+        query = query.filter(Lead.estado == payload.estado)
+
+    if payload.cidade:
+        query = query.filter(Lead.cidade == payload.cidade)
+
     leads = query.order_by(Lead.score.desc().nullslast(), Lead.id).limit(payload.limit).all()
 
     for lead in leads:
@@ -473,6 +495,12 @@ def return_leads_to_bank(
 
     if payload.pais:
         query = query.filter(Lead.pais == payload.pais.upper())
+
+    if payload.estado:
+        query = query.filter(Lead.estado == payload.estado)
+
+    if payload.cidade:
+        query = query.filter(Lead.cidade == payload.cidade)
 
     query = query.order_by(Lead.id)
 

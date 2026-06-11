@@ -21,6 +21,8 @@ class Lead(Base):
 
     nicho = Column(String)
     pais = Column(String)
+    estado = Column(String)
+    cidade = Column(String)
     score = Column(Integer)
     valor_negocio = Column(Numeric(12, 2), default=0)
 
