@@ -17,7 +17,7 @@ BATCH_SIZE = 1000
 
 
 def iter_source_leads(source_db):
-    query = """
+    base_query = """
         SELECT
             nome,
             contato,
@@ -26,8 +26,8 @@ def iter_source_leads(source_db):
             endereco,
             nicho,
             pais,
-            estado,
-            cidade,
+            {estado},
+            {cidade},
             score
         FROM dados_segmentados
         WHERE COALESCE(TRIM(nome), '') <> ''
@@ -37,6 +37,14 @@ def iter_source_leads(source_db):
 
     with sqlite3.connect(source_db) as conn:
         conn.row_factory = sqlite3.Row
+        columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(dados_segmentados)")
+        }
+        query = base_query.format(
+            estado="estado" if "estado" in columns else "NULL AS estado",
+            cidade="cidade" if "cidade" in columns else "NULL AS cidade",
+        )
         for row in conn.execute(query):
             now = datetime.utcnow()
             yield {
