@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
+from app.services.geography_service import infer_geography
 
 BATCH_SIZE = 1000
 
@@ -117,21 +118,31 @@ def load_existing_fingerprints(session: Session):
 
 def prepare_lead_mapping(record):
     now = datetime.utcnow()
+    endereco = clean_text(record.get("endereco"))
+    pais = clean_text(record.get("pais"))
+    estado = clean_text(record.get("estado") or record.get("state"))
+    cidade = clean_text(record.get("cidade") or record.get("city"))
+
+    if not estado or not cidade:
+        geography = infer_geography(endereco, pais)
+        estado = estado or geography.estado
+        cidade = cidade or geography.cidade
+
     lead = {
         "nome": clean_text(record.get("nome")),
         "contato": clean_text(record.get("contato")),
         "email": normalize_email(record.get("email")),
         "site": clean_text(record.get("site")),
-        "endereco": clean_text(record.get("endereco")),
+        "endereco": endereco,
         "instagram": clean_text(record.get("instagram")),
         "linkedin": clean_text(record.get("linkedin")),
         "facebook": clean_text(record.get("facebook")),
         "redes_sociais": clean_text(record.get("redes_sociais")),
         "observacoes": clean_text(record.get("observacoes")),
         "nicho": clean_text(record.get("nicho")),
-        "pais": clean_text(record.get("pais")),
-        "estado": clean_text(record.get("estado") or record.get("state")),
-        "cidade": clean_text(record.get("cidade") or record.get("city")),
+        "pais": pais,
+        "estado": estado,
+        "cidade": cidade,
         "score": normalize_score(record.get("score")),
         "valor_negocio": normalize_money(record.get("valor_negocio")),
         "pipeline": "NOVO LEAD",
