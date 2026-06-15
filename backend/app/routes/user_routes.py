@@ -1,66 +1,34 @@
-import os
 from datetime import datetime
+from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.auth.jwt_handler import (
+    get_current_user as get_actor,
+    get_db,
+    require_admin_user as require_admin_actor,
+    require_root_user as require_root_actor,
+)
 from app.core.security import hash_password, verify_password
-from app.database.connection import SessionLocal
+from app.core.storage import PROFILE_PHOTOS_DIR, delete_profile_photo
 from app.models.lead import Lead
 from app.models.lead_event import LeadEvent
 from app.models.user import User
 from app.schemas.user_schema import AssignLeadsRequest, LoginRequest, ReturnLeadsRequest, UserCreate, UserResponse, UserUpdate
 
-ROOT_KEY = os.getenv("ROOT_KEY", "12345m*")
-
 router = APIRouter(prefix="/users", tags=["users"])
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def require_root_key(x_root_key: str | None = Header(default=None)):
-    if x_root_key != ROOT_KEY:
-        raise HTTPException(status_code=403, detail="Acesso root negado")
-
-
-def require_admin_actor(
-    x_actor_id: int | None = Header(default=None),
-    x_root_key: str | None = Header(default=None),
-    db: Session = Depends(get_db),
-):
-    if x_actor_id is None:
-        if x_root_key == ROOT_KEY:
-            return None
-        raise HTTPException(status_code=403, detail="Acesso administrativo negado")
-
-    actor = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
-
-    if not actor or actor.role not in {"ROOT", "GERENTE"}:
-        raise HTTPException(status_code=403, detail="Somente root ou gerente pode executar esta acao")
-
-    return actor
-
-
-def require_root_actor(
-    x_actor_id: int | None = Header(default=None),
-    db: Session = Depends(get_db),
-):
-    actor = None
-
-    if x_actor_id is not None:
-        actor = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
-
-    if not actor or actor.role != "ROOT":
-        raise HTTPException(status_code=403, detail="Somente root pode executar esta acao")
-
-    return actor
+MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024
+PROFILE_PHOTO_TYPES = {
+    "image/jpeg": ("jpg", lambda content: content.startswith(b"\xff\xd8\xff")),
+    "image/png": ("png", lambda content: content.startswith(b"\x89PNG\r\n\x1a\n")),
+    "image/webp": (
+        "webp",
+        lambda content: len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP",
+    ),
+}
 
 
 def manager_team_broker_ids(db: Session, manager_id: int):
@@ -104,7 +72,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Usuario ou senha invalidos")
 
-    if not user.is_active:
+    if not user.is_active or (user.status and user.status != "ACTIVE"):
         raise HTTPException(status_code=403, detail="Usuario inativo")
 
     user.last_seen_at = datetime.utcnow()
@@ -116,16 +84,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/me/heartbeat", response_model=UserResponse)
 def heartbeat(
-    x_actor_id: int | None = Header(default=None),
+    user: User = Depends(get_actor),
     db: Session = Depends(get_db),
 ):
-    if x_actor_id is None:
-        raise HTTPException(status_code=403, detail="Usuario nao identificado")
-
-    user = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
-
     user.last_seen_at = datetime.utcnow()
     db.commit()
     db.refresh(user)
@@ -134,16 +95,11 @@ def heartbeat(
 
 @router.post("/me/logout")
 def mark_logout(
-    x_actor_id: int | None = Header(default=None),
+    user: User = Depends(get_actor),
     db: Session = Depends(get_db),
 ):
-    if x_actor_id is None:
-        return {"offline": True}
-
-    user = db.query(User).filter(User.id == x_actor_id).first()
-    if user:
-        user.last_seen_at = None
-        db.commit()
+    user.last_seen_at = None
+    db.commit()
 
     return {"offline": True}
 
@@ -151,7 +107,7 @@ def mark_logout(
 @router.get("/", response_model=list[UserResponse])
 def list_users(
     db: Session = Depends(get_db),
-    actor: User | None = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     query = db.query(User)
     if actor and actor.role == "GERENTE":
@@ -163,7 +119,7 @@ def list_users(
 @router.get("/brokers/summary")
 def broker_summary(
     db: Session = Depends(get_db),
-    actor: User | None = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     query = db.query(User)
 
@@ -190,6 +146,8 @@ def broker_summary(
                 "id": broker.id,
                 "manager_id": broker.manager_id,
                 "username": broker.username,
+                "email": broker.email,
+                "company": broker.company,
                 "full_name": broker.full_name,
                 "role": broker.role,
                 "creci": broker.creci,
@@ -202,9 +160,14 @@ def broker_summary(
                 "estado_operacao": broker.estado_operacao,
                 "cidade_operacao": broker.cidade_operacao,
                 "idioma": broker.idioma,
+                "profile_photo_url": broker.profile_photo_url,
                 "last_seen_at": broker.last_seen_at,
                 "is_online": broker.is_online,
                 "is_active": broker.is_active,
+                "status": broker.status,
+                "plan": broker.plan,
+                "plan_max_brokers": broker.plan_max_brokers,
+                "plan_max_leads": broker.plan_max_leads,
                 "total_leads": total,
                 "pipeline_counts": counts,
             }
@@ -217,7 +180,7 @@ def broker_summary(
 def create_user(
     payload: UserCreate,
     db: Session = Depends(get_db),
-    actor: User | None = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     role = payload.role.upper()
 
@@ -249,6 +212,8 @@ def create_user(
     user = User(
         manager_id=manager_id,
         username=payload.username,
+        email=(payload.email or payload.email_pessoal or "").strip().lower() or None,
+        company=(payload.company or "").strip() or None,
         password_hash=hash_password(payload.password),
         full_name=payload.full_name,
         role=role,
@@ -262,6 +227,11 @@ def create_user(
         estado_operacao=(payload.estado_operacao or "").strip(),
         cidade_operacao=(payload.cidade_operacao or "").strip(),
         idioma=(payload.idioma or "pt").lower(),
+        email_verified=True,
+        status="ACTIVE",
+        plan=(payload.plan or "STARTER").upper(),
+        plan_max_brokers=max(payload.plan_max_brokers or 0, 0),
+        plan_max_leads=max(payload.plan_max_leads or 0, 0),
         is_active=True,
     )
     db.add(user)
@@ -270,12 +240,67 @@ def create_user(
     return user
 
 
+def get_profile_photo_user(user_id: int, actor: User, db: Session):
+    if actor.id != user_id and actor.role != "ROOT":
+        raise HTTPException(status_code=403, detail="Usuario pode alterar apenas a propria foto")
+
+    user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
+    return user
+
+
+@router.post("/{user_id}/profile-photo", response_model=UserResponse)
+async def upload_profile_photo(
+    user_id: int,
+    photo: UploadFile = File(...),
+    actor: User = Depends(get_actor),
+    db: Session = Depends(get_db),
+):
+    user = get_profile_photo_user(user_id, actor, db)
+    photo_type = PROFILE_PHOTO_TYPES.get((photo.content_type or "").lower())
+    if not photo_type:
+        raise HTTPException(status_code=400, detail="Use uma imagem JPG, PNG ou WebP")
+
+    content = await photo.read(MAX_PROFILE_PHOTO_BYTES + 1)
+    if len(content) > MAX_PROFILE_PHOTO_BYTES:
+        raise HTTPException(status_code=413, detail="A foto deve ter no maximo 5 MB")
+    if not content or not photo_type[1](content):
+        raise HTTPException(status_code=400, detail="Arquivo de imagem invalido")
+
+    previous_photo = user.profile_photo_url
+    filename = f"{user.id}-{uuid4().hex}.{photo_type[0]}"
+    photo_path = PROFILE_PHOTOS_DIR / filename
+    photo_path.write_bytes(content)
+
+    user.profile_photo_url = f"/uploads/profile_photos/{filename}"
+    db.commit()
+    db.refresh(user)
+    delete_profile_photo(previous_photo)
+    return user
+
+
+@router.delete("/{user_id}/profile-photo", response_model=UserResponse)
+def remove_profile_photo(
+    user_id: int,
+    actor: User = Depends(get_actor),
+    db: Session = Depends(get_db),
+):
+    user = get_profile_photo_user(user_id, actor, db)
+    previous_photo = user.profile_photo_url
+    user.profile_photo_url = None
+    db.commit()
+    db.refresh(user)
+    delete_profile_photo(previous_photo)
+    return user
+
+
 @router.patch("/{user_id}", response_model=UserResponse)
 def update_user(
     user_id: int,
     payload: UserUpdate,
     db: Session = Depends(get_db),
-    actor: User | None = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -349,10 +374,10 @@ def update_user(
 def update_own_profile(
     user_id: int,
     payload: UserUpdate,
-    x_actor_id: int | None = Header(default=None),
+    actor: User = Depends(get_actor),
     db: Session = Depends(get_db),
 ):
-    if x_actor_id != user_id:
+    if actor.id != user_id:
         raise HTTPException(status_code=403, detail="Usuario pode editar apenas o proprio perfil")
 
     user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
@@ -392,17 +417,9 @@ def update_own_profile(
 @router.delete("/{user_id}")
 def deactivate_user(
     user_id: int,
-    x_actor_id: int | None = Header(default=None),
     db: Session = Depends(get_db),
+    actor: User = Depends(require_root_actor),
 ):
-    actor = None
-
-    if x_actor_id is not None:
-        actor = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
-
-    if not actor or actor.role != "ROOT":
-        raise HTTPException(status_code=403, detail="Somente root pode excluir usuario")
-
     if actor.id == user_id:
         raise HTTPException(status_code=400, detail="Root nao pode excluir a propria conta")
 
@@ -411,6 +428,8 @@ def deactivate_user(
         raise HTTPException(status_code=404, detail="Usuario nao encontrado")
 
     user.is_active = False
+    user.status = "SUSPENDED"
+    user.last_seen_at = None
     db.commit()
 
     return {
@@ -424,7 +443,7 @@ def deactivate_user(
 def assign_leads(
     payload: AssignLeadsRequest,
     db: Session = Depends(get_db),
-    actor: User | None = Depends(require_admin_actor),
+    actor: User = Depends(require_admin_actor),
 ):
     broker = (
         db.query(User)

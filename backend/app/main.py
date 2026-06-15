@@ -10,10 +10,13 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.security import hash_password
+from app.core.storage import UPLOADS_DIR
+from app.auth.routes import router as auth_router
 from app.database.connection import Base, SessionLocal, engine
 from app.models import import_job, lead, lead_event, support_ticket, user
 from app.models.user import User
 from app.routes.import_routes import router as import_router
+from app.routes.admin_routes import router as admin_router
 from app.routes.lead_routes import router as lead_router
 from app.routes.support_routes import router as support_router
 from app.routes.user_routes import router as user_router
@@ -37,10 +40,14 @@ app.include_router(lead_router)
 app.include_router(user_router)
 app.include_router(support_router)
 app.include_router(import_router)
+app.include_router(auth_router)
+app.include_router(admin_router)
 
 frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
 if frontend_dir.exists():
     app.mount("/assets", StaticFiles(directory=frontend_dir), name="assets")
+
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 
 def ensure_index(db, primary_sql: str, *, fallback_sql: str | None = None, label: str = ""):
@@ -77,8 +84,33 @@ def create_database_tables():
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS estado_operacao VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS cidade_operacao VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS idioma VARCHAR DEFAULT 'pt'"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_photo_url VARCHAR"))
         db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT TRUE"))
+        db.execute(text("ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT FALSE"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'ACTIVE'"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR DEFAULT 'STARTER'"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_max_brokers INTEGER DEFAULT 1"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_max_leads INTEGER DEFAULT 100"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
+        db.execute(text("UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL"))
+        db.execute(text("UPDATE users SET status = 'ACTIVE' WHERE status IS NULL OR status = ''"))
+        db.execute(text("UPDATE users SET plan = 'STARTER' WHERE plan IS NULL OR plan = ''"))
+        db.execute(text("UPDATE users SET plan_max_brokers = 1 WHERE plan_max_brokers IS NULL"))
+        db.execute(text("UPDATE users SET plan_max_leads = 100 WHERE plan_max_leads IS NULL"))
+        db.execute(text("UPDATE users SET registered_at = CURRENT_TIMESTAMP WHERE registered_at IS NULL"))
         db.commit()
+
+        ensure_index(
+            db,
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_lower ON users (LOWER(email)) WHERE email IS NOT NULL AND email <> ''",
+            label="uq_users_email_lower",
+        )
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_users_status ON users (status)")
+        ensure_index(db, "CREATE INDEX IF NOT EXISTS idx_users_verification_token ON users (email_verification_token)")
 
         ensure_index(
             db,
@@ -107,6 +139,9 @@ def create_database_tables():
                 role="ROOT",
                 full_name=os.getenv("ROOT_FULL_NAME", "Administrador LeadVault"),
                 is_active=True,
+                email_verified=True,
+                status="ACTIVE",
+                plan="ENTERPRISE",
             )
             db.add(root_user)
             db.commit()

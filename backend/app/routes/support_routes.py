@@ -1,34 +1,12 @@
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database.connection import SessionLocal
+from app.auth.jwt_handler import get_current_user as get_actor, get_db
 from app.models.support_ticket import SupportTicket
 from app.models.user import User
 from app.schemas.support_schema import SupportTicketCreate, SupportTicketResponse, SupportTicketUpdate
 
 router = APIRouter(prefix="/support", tags=["support"])
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def get_actor(
-    x_actor_id: int | None = Header(default=None),
-    db: Session = Depends(get_db),
-):
-    if x_actor_id is None:
-        raise HTTPException(status_code=403, detail="Usuario nao informado")
-
-    actor = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
-    if not actor:
-        raise HTTPException(status_code=403, detail="Usuario invalido")
-
-    return actor
 
 
 def require_manager_actor(actor: User = Depends(get_actor)):

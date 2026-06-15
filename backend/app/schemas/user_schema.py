@@ -24,6 +24,11 @@ class UserCreate(BaseModel):
     estado_operacao: str | None = None
     cidade_operacao: str | None = None
     idioma: str | None = "pt"
+    email: str | None = None
+    company: str | None = None
+    plan: str | None = "STARTER"
+    plan_max_brokers: int | None = 1
+    plan_max_leads: int | None = 100
 
 
 class UserUpdate(BaseModel):
@@ -43,12 +48,19 @@ class UserUpdate(BaseModel):
     cidade_operacao: str | None = None
     idioma: str | None = None
     is_active: bool | None = None
+    email: str | None = None
+    company: str | None = None
+    plan: str | None = None
+    plan_max_brokers: int | None = None
+    plan_max_leads: int | None = None
 
 
 class UserResponse(BaseModel):
     id: int
     manager_id: int | None = None
     username: str
+    email: str | None = None
+    company: str | None = None
     role: str
     full_name: str | None = None
     creci: str | None = None
@@ -61,9 +73,16 @@ class UserResponse(BaseModel):
     estado_operacao: str | None = None
     cidade_operacao: str | None = None
     idioma: str | None = None
+    profile_photo_url: str | None = None
     last_seen_at: datetime | None = None
     is_online: bool = False
     is_active: bool
+    email_verified: bool = False
+    status: str = "ACTIVE"
+    plan: str = "STARTER"
+    plan_max_brokers: int = 1
+    plan_max_leads: int = 100
+    registered_at: datetime | None = None
 
     model_config = {
         "from_attributes": True,

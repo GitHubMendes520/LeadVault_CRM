@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 
 class LeadResponse(BaseModel):
@@ -77,3 +77,31 @@ class LeadEventResponse(BaseModel):
     model_config = {
         "from_attributes": True,
     }
+
+
+class LeadEnrichBatchFilter(BaseModel):
+    nicho: str | None = None
+    pais: str | None = None
+
+    @model_validator(mode="after")
+    def validate_filter(self):
+        if not any(value and value.strip() for value in (self.nicho, self.pais)):
+            raise ValueError("Informe nicho ou pais para o filtro")
+        return self
+
+
+class LeadEnrichBatchRequest(BaseModel):
+    ids: list[int] | None = Field(default=None, min_length=1, max_length=500)
+    filter: LeadEnrichBatchFilter | None = None
+    limit: int = Field(default=100, ge=1, le=500)
+
+    @model_validator(mode="after")
+    def validate_selection(self):
+        if (self.ids is None) == (self.filter is None):
+            raise ValueError("Informe ids ou filter, mas nao os dois")
+        return self
+
+
+class LeadEnrichBatchResponse(BaseModel):
+    status: str
+    scheduled: int

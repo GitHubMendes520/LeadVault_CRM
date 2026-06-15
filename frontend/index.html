@@ -172,6 +172,54 @@
       line-height: 1.45;
     }
 
+    .hidden {
+      display: none !important;
+    }
+
+    .auth-switch {
+      margin-top: 14px;
+      width: 100%;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .auth-status {
+      min-height: 20px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .auth-status.success {
+      color: #059669;
+    }
+
+    .auth-status.error {
+      color: #dc2626;
+    }
+
+    .pending-user-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .pending-user-controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+
+    @media (max-width: 760px) {
+      .pending-user-controls {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
     .topbar {
       height: 68px;
       display: flex;
@@ -553,6 +601,51 @@
       align-items: center;
       color: #334155;
       font-weight: 700;
+    }
+
+    .session-profile,
+    .profile-identity,
+    .profile-actions {
+      display: flex;
+      align-items: center;
+    }
+
+    .session-profile { gap: 10px; }
+    .profile-identity { gap: 12px; min-width: 0; }
+    .profile-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .profile-avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--green);
+      overflow: hidden;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .profile-avatar-small { width: 42px; height: 42px; }
+    .profile-avatar-button { padding: 0; cursor: pointer; }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .avatar-initials { font-weight: 900; }
+
+    .profile-photo-edit {
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--panel);
+      background: var(--green);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
     }
 
     .broker-row {
@@ -1293,6 +1386,29 @@
           <button id="loginButton" type="submit">Entrar</button>
         </div>
         <div class="login-security-note" id="loginNote">Use as credenciais recebidas pelo administrador da operação.</div>
+        <button class="auth-switch" id="showRegisterButton" type="button">Criar conta</button>
+        <div class="auth-status" id="loginStatus" aria-live="polite"></div>
+      </form>
+      <form class="login-card hidden" id="registerForm" autocomplete="off">
+        <div class="brand">LeadVault</div>
+        <h1 id="registerTitle">Criar conta</h1>
+        <div class="subtitle" id="registerSubtitle">Cadastre-se para solicitar acesso à operação.</div>
+        <div class="login-form">
+          <input id="registerFullName" placeholder="Nome completo" autocomplete="name">
+          <input id="registerEmail" type="email" placeholder="E-mail" autocomplete="email">
+          <input id="registerCompany" placeholder="Empresa" autocomplete="organization">
+          <input id="registerPhone" placeholder="Telefone" autocomplete="tel">
+          <select id="registerPlan">
+            <option value="STARTER">Starter</option>
+            <option value="PRO">Pro</option>
+            <option value="EQUIPES">Equipes</option>
+          </select>
+          <input id="registerPassword" type="password" placeholder="Senha" autocomplete="new-password">
+          <input id="registerPasswordConfirm" type="password" placeholder="Confirmar senha" autocomplete="new-password">
+          <button id="registerButton" type="submit">Solicitar acesso</button>
+        </div>
+        <button class="auth-switch" id="backToLoginButton" type="button">Voltar ao login</button>
+        <div class="auth-status" id="registerStatus" aria-live="polite"></div>
       </form>
     </div>
   </section>
@@ -1329,8 +1445,13 @@
     <div class="spacer"></div>
     <button class="support-button" id="supportButton" type="button">Suporte</button>
     <select id="appTheme" class="theme-select" title="Aparência"></select>
-    <div class="user-pill" id="sessionUser">root <span>Administrador</span></div>
-    <button class="ghost logout-button" id="logoutButton">Sair</button>
+        <div class="session-profile">
+          <div class="profile-avatar profile-avatar-small" aria-hidden="true">
+            <span id="sessionAvatarContent" class="avatar-initials">R</span>
+          </div>
+          <div class="user-pill" id="sessionUser">root <span>Administrador</span></div>
+        </div>
+        <button class="ghost logout-button" id="logoutButton">Sair</button>
   </header>
 
   <section class="toolbar">
@@ -1353,12 +1474,22 @@
     <div class="panel-box">
       <div class="panel-title">Meu perfil</div>
       <div class="profile-summary">
-        <div>
-          <div id="profileName">root</div>
-          <div class="line" id="profileDetails">Administrador</div>
+        <div class="profile-identity">
+          <button class="profile-avatar profile-avatar-button" id="profilePhotoButton" type="button" title="Alterar foto">
+            <span id="profileAvatarContent" class="avatar-initials">R</span>
+            <span class="profile-photo-edit" aria-hidden="true">+</span>
+          </button>
+          <div>
+            <div id="profileName">root</div>
+            <div class="line" id="profileDetails">Administrador</div>
+          </div>
         </div>
-        <button class="ghost" id="editMyProfileButton">Editar perfil</button>
+        <div class="profile-actions">
+          <button class="ghost" id="removeProfilePhotoButton" type="button" hidden>Remover foto</button>
+          <button class="ghost" id="editMyProfileButton">Editar perfil</button>
+        </div>
       </div>
+      <input hidden id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp">
     </div>
     <div class="panel-box manager-only">
       <div class="panel-title">Distribuir por segmento e país</div>
@@ -1467,7 +1598,7 @@
         <div class="panel-title">Cadastrar usuário autorizado</div>
         <div class="inline-form">
           <input id="newBrokerUser" placeholder="usuario">
-          <input id="newBrokerPassword" value="12345m*" placeholder="senha inicial">
+          <input id="newBrokerPassword" type="password" placeholder="senha inicial" autocomplete="new-password">
           <select id="newBrokerCountry">
             <option value="BR">Brasil</option>
             <option value="MX">México</option>
@@ -1490,6 +1621,10 @@
           </select>
           <button id="createBrokerButton">Cadastrar</button>
         </div>
+      </div>
+      <div class="panel-box root-only">
+        <div class="panel-title" id="pendingUsersTitle">Cadastros aguardando aprovação</div>
+        <div class="broker-list" id="pendingUserList"></div>
       </div>
       <div class="panel-box root-only">
         <div class="panel-title">Gerentes e brokers</div>
@@ -1740,7 +1875,52 @@
     const API_BASE = window.location.protocol === "file:"
       ? "https://leadvaultcrm-production.up.railway.app"
       : window.location.origin;
-    const ROOT_KEY = "";
+    let accessToken = localStorage.getItem("leadvault_access_token") || "";
+
+    function authHeaders(headers = {}) {
+      const authenticatedHeaders = new Headers(headers);
+      if (accessToken) {
+        authenticatedHeaders.set("Authorization", `Bearer ${accessToken}`);
+      }
+      return authenticatedHeaders;
+    }
+
+    function apiFetch(url, options = {}) {
+      return fetch(url, {
+        ...options,
+        headers: authHeaders(options.headers)
+      });
+    }
+
+    async function responseMessage(response, fallback) {
+      try {
+        const data = await response.json();
+        return data.detail || data.message || fallback;
+      } catch (_error) {
+        return fallback;
+      }
+    }
+
+    function setAuthStatus(elementId, message = "", type = "") {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.classList.remove("success", "error");
+      if (type) {
+        element.classList.add(type);
+      }
+    }
+
+    function showLoginForm() {
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("loginForm").classList.remove("hidden");
+      setAuthStatus("registerStatus");
+    }
+
+    function showRegisterForm() {
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("registerForm").classList.remove("hidden");
+      setAuthStatus("loginStatus");
+    }
     const stages = [
       "NOVO LEAD",
       "ATENDIMENTO",
@@ -1780,6 +1960,25 @@
         loginPasswordPlaceholder: "Senha",
         loginButton: "Entrar",
         loginNote: "Use as credenciais recebidas pelo administrador da operação.",
+        createAccount: "Criar conta",
+        registerTitle: "Criar conta",
+        registerSubtitle: "Cadastre-se para solicitar acesso à operação.",
+        fullNamePlaceholder: "Nome completo",
+        emailPlaceholder: "E-mail",
+        companyPlaceholder: "Empresa",
+        phonePlaceholder: "Telefone",
+        passwordConfirmPlaceholder: "Confirmar senha",
+        registerButton: "Solicitar acesso",
+        backToLogin: "Voltar ao login",
+        passwordsMismatch: "As senhas não coincidem.",
+        registrationSuccess: "Cadastro recebido. Confirme seu e-mail e aguarde a aprovação do administrador.",
+        registrationError: "Não foi possível concluir o cadastro.",
+        pendingUsersTitle: "Cadastros aguardando aprovação",
+        noPendingUsers: "Nenhum cadastro aguardando aprovação.",
+        approve: "Aprovar",
+        suspend: "Suspender",
+        maxBrokers: "Limite de brokers",
+        maxLeads: "Limite de leads",
         appearanceTitle: "Aparência",
         themeClassic: "Clássico claro",
         themePremium: "Premium dark",
@@ -1819,6 +2018,12 @@
         sendBroker: "Enviar ao Broker",
         profileTitle: "Meu perfil",
         editProfile: "Editar perfil",
+        changePhoto: "Alterar foto",
+        removePhoto: "Remover foto",
+        photoTooLarge: "A foto deve ter no máximo 5 MB.",
+        photoUploadFailed: "Não foi possível enviar a foto.",
+        photoRemoveFailed: "Não foi possível remover a foto.",
+        photoRemoveConfirm: "Remover a foto do perfil?",
         distributeTitle: "Distribuir por segmento, país, estado e cidade",
         selectBroker: "Selecione broker",
         allBrokers: "Todos os brokers",
@@ -1897,6 +2102,25 @@
         loginPasswordPlaceholder: "Password",
         loginButton: "Sign in",
         loginNote: "Use the credentials provided by your operation administrator.",
+        createAccount: "Create account",
+        registerTitle: "Create account",
+        registerSubtitle: "Register to request access to the operation.",
+        fullNamePlaceholder: "Full name",
+        emailPlaceholder: "Email",
+        companyPlaceholder: "Company",
+        phonePlaceholder: "Phone",
+        passwordConfirmPlaceholder: "Confirm password",
+        registerButton: "Request access",
+        backToLogin: "Back to sign in",
+        passwordsMismatch: "Passwords do not match.",
+        registrationSuccess: "Registration received. Verify your email and wait for administrator approval.",
+        registrationError: "Registration could not be completed.",
+        pendingUsersTitle: "Registrations awaiting approval",
+        noPendingUsers: "No registrations awaiting approval.",
+        approve: "Approve",
+        suspend: "Suspend",
+        maxBrokers: "Broker limit",
+        maxLeads: "Lead limit",
         appearanceTitle: "Appearance",
         themeClassic: "Classic light",
         themePremium: "Premium dark",
@@ -1936,6 +2160,12 @@
         sendBroker: "Send to Broker",
         profileTitle: "My profile",
         editProfile: "Edit profile",
+        changePhoto: "Change photo",
+        removePhoto: "Remove photo",
+        photoTooLarge: "The photo must be at most 5 MB.",
+        photoUploadFailed: "Could not upload the photo.",
+        photoRemoveFailed: "Could not remove the photo.",
+        photoRemoveConfirm: "Remove profile photo?",
         distributeTitle: "Distribute by segment, country, state, and city",
         selectBroker: "Select broker",
         allBrokers: "All brokers",
@@ -2022,6 +2252,25 @@
         loginPasswordPlaceholder: "Contraseña",
         loginButton: "Entrar",
         loginNote: "Usa las credenciales recibidas por el administrador de la operación.",
+        createAccount: "Crear cuenta",
+        registerTitle: "Crear cuenta",
+        registerSubtitle: "Regístrate para solicitar acceso a la operación.",
+        fullNamePlaceholder: "Nombre completo",
+        emailPlaceholder: "Correo electrónico",
+        companyPlaceholder: "Empresa",
+        phonePlaceholder: "Teléfono",
+        passwordConfirmPlaceholder: "Confirmar contraseña",
+        registerButton: "Solicitar acceso",
+        backToLogin: "Volver al acceso",
+        passwordsMismatch: "Las contraseñas no coinciden.",
+        registrationSuccess: "Registro recibido. Confirma tu correo y espera la aprobación del administrador.",
+        registrationError: "No fue posible completar el registro.",
+        pendingUsersTitle: "Registros pendientes de aprobación",
+        noPendingUsers: "No hay registros pendientes de aprobación.",
+        approve: "Aprobar",
+        suspend: "Suspender",
+        maxBrokers: "Límite de brokers",
+        maxLeads: "Límite de leads",
         appearanceTitle: "Apariencia",
         themeClassic: "Clásico claro",
         themePremium: "Premium dark",
@@ -2061,6 +2310,12 @@
         sendBroker: "Enviar al Broker",
         profileTitle: "Mi perfil",
         editProfile: "Editar perfil",
+        changePhoto: "Cambiar foto",
+        removePhoto: "Eliminar foto",
+        photoTooLarge: "La foto debe tener como máximo 5 MB.",
+        photoUploadFailed: "No fue posible subir la foto.",
+        photoRemoveFailed: "No fue posible eliminar la foto.",
+        photoRemoveConfirm: "¿Eliminar la foto del perfil?",
         distributeTitle: "Distribuir por segmento, país, estado y ciudad",
         selectBroker: "Seleccione broker",
         allBrokers: "Todos los brokers",
@@ -2157,6 +2412,11 @@
     const brokerFilter = document.getElementById("brokerFilter");
     const brokerList = document.getElementById("brokerList");
     const sessionUser = document.getElementById("sessionUser");
+    const sessionAvatarContent = document.getElementById("sessionAvatarContent");
+    const profileAvatarContent = document.getElementById("profileAvatarContent");
+    const profilePhotoInput = document.getElementById("profilePhotoInput");
+    const profilePhotoButton = document.getElementById("profilePhotoButton");
+    const removeProfilePhotoButton = document.getElementById("removeProfilePhotoButton");
     const leadModal = document.getElementById("leadModal");
     const leadPipeline = document.getElementById("leadPipeline");
     const userModal = document.getElementById("userModal");
@@ -2593,6 +2853,18 @@
       setText("#loginNote", t("loginNote"));
       setPlaceholder("#loginUser", t("loginUserPlaceholder"));
       setPlaceholder("#loginPassword", t("loginPasswordPlaceholder"));
+      setText("#showRegisterButton", t("createAccount"));
+      setText("#registerTitle", t("registerTitle"));
+      setText("#registerSubtitle", t("registerSubtitle"));
+      setText("#registerButton", t("registerButton"));
+      setText("#backToLoginButton", t("backToLogin"));
+      setPlaceholder("#registerFullName", t("fullNamePlaceholder"));
+      setPlaceholder("#registerEmail", t("emailPlaceholder"));
+      setPlaceholder("#registerCompany", t("companyPlaceholder"));
+      setPlaceholder("#registerPhone", t("phonePlaceholder"));
+      setPlaceholder("#registerPassword", t("loginPasswordPlaceholder"));
+      setPlaceholder("#registerPasswordConfirm", t("passwordConfirmPlaceholder"));
+      setText("#pendingUsersTitle", t("pendingUsersTitle"));
 
       document.querySelectorAll(".nav .nav-main[data-view-target]").forEach((button, index) => {
         button.textContent = t("nav")[index] || button.textContent;
@@ -2618,6 +2890,9 @@
       setText("#reloadButton", t("filterButton"));
       setText("#seedBrokerButton", t("sendBroker"));
       setText("#editMyProfileButton", t("editProfile"));
+      setText("#removeProfilePhotoButton", t("removePhoto"));
+      profilePhotoButton.title = t("changePhoto");
+      profilePhotoButton.setAttribute("aria-label", t("changePhoto"));
       setText("#assignSmartButton", t("sendFiltered"));
       setText("#refreshInventoryButton", t("refreshStock"));
       setText("#returnBulkButton", t("returnBank"));
@@ -2763,11 +3038,7 @@
         </div>
       `;
 
-      const response = await fetch(`${API_BASE}/leads/${leadId}/events`, {
-        headers: {
-          "x-actor-id": String(currentUser.id)
-        }
-      });
+      const response = await apiFetch(`${API_BASE}/leads/${leadId}/events`);
 
       if (!response.ok) {
         list.innerHTML = `
@@ -2790,11 +3061,10 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/leads/${leadId}/events`, {
+      const response = await apiFetch(`${API_BASE}/leads/${leadId}/events`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ message })
       });
@@ -2872,6 +3142,86 @@
       userModal.classList.remove("open");
     }
 
+    function userInitials(user) {
+      const source = user?.full_name || user?.username || "LV";
+      return source
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0] || "")
+        .join("")
+        .toUpperCase();
+    }
+
+    function profilePhotoUrl(value) {
+      if (!value) return "";
+      if (/^(https?:|data:|blob:)/i.test(value)) return value;
+      return `${API_BASE}${value.startsWith("/") ? "" : "/"}${value}`;
+    }
+
+    function renderAvatar(container, user) {
+      if (!container) return;
+      const fallback = document.createElement("span");
+      fallback.className = "avatar-initials";
+      fallback.textContent = userInitials(user);
+      const url = profilePhotoUrl(user?.profile_photo_url);
+      if (!url) {
+        container.replaceChildren(fallback);
+        return;
+      }
+      const image = document.createElement("img");
+      image.alt = "";
+      image.src = url;
+      image.addEventListener("error", () => container.replaceChildren(fallback), { once: true });
+      container.replaceChildren(image);
+    }
+
+    function refreshSessionIdentity() {
+      const roleSpan = document.createElement("span");
+      roleSpan.textContent = currentUser.role || "";
+      sessionUser.replaceChildren(document.createTextNode(currentUser.username || ""), roleSpan);
+      renderAvatar(sessionAvatarContent, currentUser);
+    }
+
+    async function uploadProfilePhoto(event) {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        alert(t("photoTooLarge"));
+        return;
+      }
+      const formData = new FormData();
+      formData.append("photo", file);
+      const response = await apiFetch(`${API_BASE}/users/${currentUser.id}/profile-photo`, {
+        method: "POST",
+        body: formData
+      });
+      if (!response.ok) {
+        alert(await responseMessage(response, t("photoUploadFailed")));
+        return;
+      }
+      currentUser = { ...currentUser, ...await response.json() };
+      localStorage.setItem("leadvault_user", JSON.stringify(currentUser));
+      refreshSessionIdentity();
+      refreshProfileBox();
+    }
+
+    async function removeProfilePhoto() {
+      if (!currentUser.profile_photo_url || !confirm(t("photoRemoveConfirm"))) return;
+      const response = await apiFetch(`${API_BASE}/users/${currentUser.id}/profile-photo`, {
+        method: "DELETE"
+      });
+      if (!response.ok) {
+        alert(await responseMessage(response, t("photoRemoveFailed")));
+        return;
+      }
+      currentUser = { ...currentUser, ...await response.json() };
+      localStorage.setItem("leadvault_user", JSON.stringify(currentUser));
+      refreshSessionIdentity();
+      refreshProfileBox();
+    }
+
     function refreshProfileBox() {
       document.getElementById("profileName").textContent = currentUser.full_name || currentUser.username;
       document.getElementById("profileDetails").textContent = [
@@ -2879,6 +3229,8 @@
         currentUser.creci ? `CRECI: ${currentUser.creci}` : "",
         currentUser.telefone || ""
       ].filter(Boolean).join(" | ");
+      renderAvatar(profileAvatarContent, currentUser);
+      removeProfilePhotoButton.hidden = !currentUser.profile_photo_url;
     }
 
     function openMyProfile() {
@@ -2971,9 +3323,7 @@
       const selectedBroker = currentUser.role === "BROKER" ? String(currentUser.id) : brokerFilter.value;
       const brokerParam = selectedBroker ? `&assigned_to_user_id=${selectedBroker}` : "";
       const limitPerStage = selectedBroker ? 100 : 25;
-      const response = await fetch(`${API_BASE}/leads/kanban?limit_per_stage=${limitPerStage}${brokerParam}`, {
-        headers: { "x-actor-id": String(currentUser.id) }
-      });
+      const response = await apiFetch(`${API_BASE}/leads/kanban?limit_per_stage=${limitPerStage}${brokerParam}`);
       const data = await response.json();
       renderBoard(data);
     }
@@ -3004,9 +3354,7 @@
     }
 
     async function loadInventory() {
-      const response = await fetch(`${API_BASE}/leads/inventory`, {
-        headers: { "x-actor-id": String(currentUser.id) }
-      });
+      const response = await apiFetch(`${API_BASE}/leads/inventory`);
       if (!response.ok) {
         return;
       }
@@ -3078,12 +3426,10 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/users/assign-leads`, {
+      const response = await apiFetch(`${API_BASE}/users/assign-leads`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-root-key": ROOT_KEY,
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           broker_id: Number(brokerId),
@@ -3103,7 +3449,7 @@
     }
 
     function applyUserMode() {
-      sessionUser.innerHTML = `${currentUser.username} <span>${currentUser.role}</span>`;
+      refreshSessionIdentity();
       refreshProfileBox();
 
       if (currentUser.role === "BROKER") {
@@ -3134,9 +3480,8 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/users/me/heartbeat`, {
-        method: "POST",
-        headers: { "x-actor-id": String(currentUser.id) }
+      const response = await apiFetch(`${API_BASE}/users/me/heartbeat`, {
+        method: "POST"
       });
 
       if (response.ok) {
@@ -3179,9 +3524,8 @@
         return;
       }
 
-      await fetch(`${API_BASE}/users/me/logout`, {
-        method: "POST",
-        headers: { "x-actor-id": String(currentUser.id) }
+      await apiFetch(`${API_BASE}/auth/logout`, {
+        method: "POST"
       }).catch(() => {});
     }
 
@@ -3198,6 +3542,7 @@
       applyUserMode();
       showView("vendas");
       await loadBrokers();
+      await loadPendingUsers();
       await loadInventory();
       await loadBoard();
       await loadSupportTickets();
@@ -3226,26 +3571,80 @@
 
     async function login(event) {
       event.preventDefault();
-      const username = document.getElementById("loginUser").value.trim();
+      const email = document.getElementById("loginUser").value.trim();
       const password = document.getElementById("loginPassword").value;
-      const response = await fetch(`${API_BASE}/users/login`, {
+      setAuthStatus("loginStatus");
+
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, password })
       });
 
       if (!response.ok) {
-        alert(t("loginInvalid"));
+        setAuthStatus("loginStatus", await responseMessage(response, t("loginInvalid")), "error");
         return;
       }
 
-      await enterDashboard(await response.json());
+      const data = await response.json();
+      accessToken = data.access_token;
+      localStorage.setItem("leadvault_access_token", accessToken);
+      await enterDashboard(data.user);
     }
 
-    function logout() {
-      markOffline();
+    async function register(event) {
+      event.preventDefault();
+      const password = document.getElementById("registerPassword").value;
+      const passwordConfirmation = document.getElementById("registerPasswordConfirm").value;
+      setAuthStatus("registerStatus");
+
+      if (password !== passwordConfirmation) {
+        setAuthStatus("registerStatus", t("passwordsMismatch"), "error");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: document.getElementById("registerFullName").value.trim(),
+          email: document.getElementById("registerEmail").value.trim(),
+          company: document.getElementById("registerCompany").value.trim() || null,
+          phone: document.getElementById("registerPhone").value.trim() || null,
+          plan: document.getElementById("registerPlan").value,
+          password
+        })
+      });
+
+      if (!response.ok) {
+        setAuthStatus("registerStatus", await responseMessage(response, t("registrationError")), "error");
+        return;
+      }
+
+      const data = await response.json();
+      const status = document.getElementById("registerStatus");
+      status.textContent = `${t("registrationSuccess")} `;
+      status.classList.remove("error");
+      status.classList.add("success");
+      if (data.verification_url) {
+        const verificationLink = document.createElement("a");
+        verificationLink.href = data.verification_url;
+        verificationLink.target = "_blank";
+        verificationLink.rel = "noopener";
+        verificationLink.textContent = currentLanguage === "en"
+          ? "Verify email"
+          : currentLanguage === "es" ? "Confirmar correo" : "Confirmar e-mail";
+        status.appendChild(verificationLink);
+      }
+      document.getElementById("registerForm").reset();
+    }
+
+    async function logout() {
+      await markOffline();
       saveThemePreference(currentTheme, null);
       localStorage.removeItem("leadvault_user");
+      localStorage.removeItem("leadvault_access_token");
+      accessToken = "";
       if (brokerRefreshTimer) {
         clearInterval(brokerRefreshTimer);
         brokerRefreshTimer = null;
@@ -3269,6 +3668,7 @@
       totalText.textContent = "Carregando leads...";
       document.getElementById("loginUser").value = "";
       document.getElementById("loginPassword").value = "";
+      showLoginForm();
       applyLanguage(currentLanguage);
       applyTheme(getStoredTheme(null), { persist: false, user: null });
     }
@@ -3331,9 +3731,7 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/support/tickets`, {
-        headers: { "x-actor-id": String(currentUser.id) }
-      });
+      const response = await apiFetch(`${API_BASE}/support/tickets`);
 
       if (!response.ok) {
         return;
@@ -3361,11 +3759,10 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/support/tickets`, {
+      const response = await apiFetch(`${API_BASE}/support/tickets`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           module: document.getElementById("supportModule").value,
@@ -3391,11 +3788,10 @@
     }
 
     async function updateSupportTicketStatus(ticketId, status) {
-      const response = await fetch(`${API_BASE}/support/tickets/${ticketId}`, {
+      const response = await apiFetch(`${API_BASE}/support/tickets/${ticketId}`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ status })
       });
@@ -3425,12 +3821,10 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/users/`, {
+      const response = await apiFetch(`${API_BASE}/users/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-root-key": ROOT_KEY,
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           username,
@@ -3457,12 +3851,7 @@
     }
 
     async function loadBrokers() {
-      const response = await fetch(`${API_BASE}/users/brokers/summary`, {
-        headers: {
-          "x-root-key": ROOT_KEY,
-          "x-actor-id": String(currentUser.id)
-        }
-      });
+      const response = await apiFetch(`${API_BASE}/users/brokers/summary`);
 
       if (!response.ok) {
         return;
@@ -3549,6 +3938,126 @@
       });
     }
 
+    function pendingManagerOptions() {
+      const managers = cachedBrokers.filter((user) => user.role === "GERENTE");
+      return `<option value="">Sem gerente</option>` + managers.map((manager) => {
+        return `<option value="${manager.id}">${escapeHtml(manager.full_name || manager.username)}</option>`;
+      }).join("");
+    }
+
+    function renderPendingUsers(users) {
+      const list = document.getElementById("pendingUserList");
+      if (currentUser.role !== "ROOT") {
+        list.innerHTML = "";
+        return;
+      }
+
+      if (!users.length) {
+        list.innerHTML = `<div class="pending-user-empty">${escapeHtml(t("noPendingUsers"))}</div>`;
+        return;
+      }
+
+      list.innerHTML = users.map((user) => {
+        const emailState = user.email_verified
+          ? (currentLanguage === "en" ? "Email verified" : currentLanguage === "es" ? "Correo confirmado" : "E-mail confirmado")
+          : (currentLanguage === "en" ? "Awaiting email" : currentLanguage === "es" ? "Aguardando correo" : "Aguardando e-mail");
+        return `
+          <div class="pending-user-row" data-pending-user-id="${user.id}">
+            <div>
+              <strong>${escapeHtml(user.full_name || user.username)}</strong><br>
+              <small>${escapeHtml(user.email || user.username)} · ${escapeHtml(user.company || "Sem empresa")}</small><br>
+              <small>${escapeHtml(emailState)} · ${escapeHtml(user.status)}</small>
+            </div>
+            <div class="pending-user-controls">
+              <select class="lv-input" data-pending-role>
+                <option value="BROKER">Broker</option>
+                <option value="GERENTE">Gerente</option>
+              </select>
+              <select class="lv-input" data-pending-manager>${pendingManagerOptions()}</select>
+              <select class="lv-input" data-pending-plan>
+                <option value="STARTER">Starter</option>
+                <option value="PRO">Pro</option>
+                <option value="EQUIPES">Equipes</option>
+              </select>
+              <input class="lv-input" data-pending-max-brokers type="number" min="0" value="${user.plan_max_brokers || 1}" placeholder="${escapeHtml(t("maxBrokers"))}">
+              <input class="lv-input" data-pending-max-leads type="number" min="0" value="${user.plan_max_leads || 100}" placeholder="${escapeHtml(t("maxLeads"))}">
+              <button class="lv-button-primary" data-approve-pending ${user.email_verified ? "" : "disabled"}>${escapeHtml(t("approve"))}</button>
+              <button class="lv-button-secondary" data-suspend-pending>${escapeHtml(t("suspend"))}</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      list.querySelectorAll("[data-pending-role]").forEach((roleSelect) => {
+        const row = roleSelect.closest("[data-pending-user-id]");
+        const managerSelect = row.querySelector("[data-pending-manager]");
+        const syncManager = () => {
+          managerSelect.disabled = roleSelect.value !== "BROKER";
+          if (managerSelect.disabled) {
+            managerSelect.value = "";
+          }
+        };
+        roleSelect.addEventListener("change", syncManager);
+        syncManager();
+      });
+
+      list.querySelectorAll("[data-approve-pending]").forEach((button) => {
+        button.addEventListener("click", () => approvePendingUser(button.closest("[data-pending-user-id]")));
+      });
+      list.querySelectorAll("[data-suspend-pending]").forEach((button) => {
+        button.addEventListener("click", () => suspendPendingUser(button.closest("[data-pending-user-id]")));
+      });
+    }
+
+    async function loadPendingUsers() {
+      if (currentUser.role !== "ROOT") {
+        renderPendingUsers([]);
+        return;
+      }
+
+      const response = await apiFetch(`${API_BASE}/admin/users/pending`);
+      if (!response.ok) {
+        document.getElementById("pendingUserList").innerHTML = "";
+        return;
+      }
+      renderPendingUsers(await response.json());
+    }
+
+    async function approvePendingUser(row) {
+      const userId = row.dataset.pendingUserId;
+      const role = row.querySelector("[data-pending-role]").value;
+      const managerValue = row.querySelector("[data-pending-manager]").value;
+      const response = await apiFetch(`${API_BASE}/admin/users/${userId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role,
+          manager_id: role === "BROKER" && managerValue ? Number(managerValue) : null,
+          plan: row.querySelector("[data-pending-plan]").value,
+          plan_max_brokers: Number(row.querySelector("[data-pending-max-brokers]").value || 0),
+          plan_max_leads: Number(row.querySelector("[data-pending-max-leads]").value || 0)
+        })
+      });
+
+      if (!response.ok) {
+        alert(await responseMessage(response, t("registrationError")));
+        return;
+      }
+      await loadBrokers();
+      await loadPendingUsers();
+    }
+
+    async function suspendPendingUser(row) {
+      const response = await apiFetch(`${API_BASE}/admin/users/${row.dataset.pendingUserId}/suspend`, {
+        method: "POST"
+      });
+      if (!response.ok) {
+        alert(await responseMessage(response, t("registrationError")));
+        return;
+      }
+      await loadPendingUsers();
+    }
+
     function bindDragAndDrop() {
       boardEl.querySelectorAll(".card").forEach((card) => {
         card.addEventListener("dragstart", (event) => {
@@ -3573,11 +4082,10 @@
           const leadId = event.dataTransfer.getData("text/plain");
           const pipeline = column.dataset.stage;
 
-          await fetch(`${API_BASE}/leads/${leadId}/pipeline`, {
+          await apiFetch(`${API_BASE}/leads/${leadId}/pipeline`, {
             method: "PATCH",
             headers: {
-              "Content-Type": "application/json",
-              "x-actor-id": String(currentUser.id)
+              "Content-Type": "application/json"
             },
             body: JSON.stringify({ pipeline })
           });
@@ -3606,11 +4114,10 @@
       const scoreValue = document.getElementById("leadScore").value;
       const valueInput = document.getElementById("leadValorNegocio").value.replace(",", ".");
 
-      await fetch(`${API_BASE}/leads/${leadId}`, {
+      await apiFetch(`${API_BASE}/leads/${leadId}`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           nome: document.getElementById("leadNome").value,
@@ -3673,12 +4180,10 @@
         ? `${API_BASE}/users/${userId}/profile`
         : `${API_BASE}/users/${userId}`;
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          "x-root-key": ROOT_KEY,
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
       });
@@ -3693,7 +4198,7 @@
         currentUser = updatedUser;
         applyLanguage(currentUser.idioma || currentLanguage);
         localStorage.setItem("leadvault_user", JSON.stringify(currentUser));
-        sessionUser.innerHTML = `${currentUser.username} <span>${currentUser.role}</span>`;
+        refreshSessionIdentity();
         refreshProfileBox();
         closeUserModal();
         await loadBoard();
@@ -3718,12 +4223,8 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/users/${userId}`, {
-        method: "DELETE",
-        headers: {
-          "x-root-key": ROOT_KEY,
-          "x-actor-id": String(currentUser.id)
-        }
+      const response = await apiFetch(`${API_BASE}/users/${userId}`, {
+        method: "DELETE"
       });
 
       if (!response.ok) {
@@ -3745,20 +4246,18 @@
         return;
       }
 
-      await fetch(`${API_BASE}/leads/${leadId}/assign`, {
+      await apiFetch(`${API_BASE}/leads/${leadId}/assign`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ assigned_to_user_id: Number(targetBrokerId) })
       });
 
-      await fetch(`${API_BASE}/leads/${leadId}/pipeline`, {
+      await apiFetch(`${API_BASE}/leads/${leadId}/pipeline`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ pipeline: "NOVO LEAD" })
       });
@@ -3770,9 +4269,8 @@
 
     async function returnLeadToBank() {
       const leadId = document.getElementById("leadId").value;
-      await fetch(`${API_BASE}/leads/${leadId}/return-to-bank`, {
-        method: "PATCH",
-        headers: { "x-actor-id": String(currentUser.id) }
+      await apiFetch(`${API_BASE}/leads/${leadId}/return-to-bank`, {
+        method: "PATCH"
       });
 
       closeLeadModal();
@@ -3802,11 +4300,10 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/users/return-leads-to-bank`, {
+      const response = await apiFetch(`${API_BASE}/users/return-leads-to-bank`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-actor-id": String(currentUser.id)
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           broker_id: brokerId ? Number(brokerId) : null,
@@ -3836,9 +4333,8 @@
         return;
       }
 
-      await fetch(`${API_BASE}/leads/${leadId}`, {
-        method: "DELETE",
-        headers: { "x-actor-id": String(currentUser.id) }
+      await apiFetch(`${API_BASE}/leads/${leadId}`, {
+        method: "DELETE"
       });
 
       closeLeadModal();
@@ -3849,6 +4345,9 @@
     document.getElementById("reloadButton").addEventListener("click", loadBoard);
     document.getElementById("seedBrokerButton").addEventListener("click", sendToBroker);
     document.getElementById("loginForm").addEventListener("submit", login);
+    document.getElementById("registerForm").addEventListener("submit", register);
+    document.getElementById("showRegisterButton").addEventListener("click", showRegisterForm);
+    document.getElementById("backToLoginButton").addEventListener("click", showLoginForm);
     document.getElementById("logoutButton").addEventListener("click", logout);
     document.getElementById("supportButton").addEventListener("click", openSupport);
     document.getElementById("closeSupportButton").addEventListener("click", closeSupport);
@@ -3860,6 +4359,9 @@
     });
     document.getElementById("createBrokerButton").addEventListener("click", createBroker);
     document.getElementById("editMyProfileButton").addEventListener("click", openMyProfile);
+    profilePhotoButton.addEventListener("click", () => profilePhotoInput.click());
+    profilePhotoInput.addEventListener("change", uploadProfilePhoto);
+    removeProfilePhotoButton.addEventListener("click", removeProfilePhoto);
     document.getElementById("moveLeadBrokerButton").addEventListener("click", moveLeadToBroker);
     document.getElementById("returnLeadBankButton").addEventListener("click", returnLeadToBank);
     document.getElementById("returnBulkButton").addEventListener("click", returnBulkLeadsToBank);
@@ -3935,14 +4437,32 @@
     applyTheme(getStoredTheme(null), { persist: false, user: null });
     applyLanguage(currentLanguage);
 
-    const savedUser = localStorage.getItem("leadvault_user");
-    if (savedUser) {
-      enterDashboard(JSON.parse(savedUser)).catch(() => {
+    async function restoreSession() {
+      const savedUser = localStorage.getItem("leadvault_user");
+      if (!savedUser || !accessToken) {
         localStorage.removeItem("leadvault_user");
-        setBodyState({ loggedIn: false });
-        applyTheme(getStoredTheme(null), { persist: false, user: null });
-      });
+        localStorage.removeItem("leadvault_access_token");
+        accessToken = "";
+        showLoginForm();
+        return;
+      }
+
+      try {
+        const response = await apiFetch(`${API_BASE}/auth/me`);
+        if (!response.ok) {
+          throw new Error("Sessao expirada");
+        }
+        const authenticatedUser = await response.json();
+        await enterDashboard(authenticatedUser);
+      } catch (_error) {
+        localStorage.removeItem("leadvault_user");
+        localStorage.removeItem("leadvault_access_token");
+        accessToken = "";
+        showLoginForm();
+      }
     }
+
+    restoreSession();
   </script>
 </body>
 </html>

@@ -1,14 +1,28 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from app.database.connection import SessionLocal
+from app.auth.jwt_handler import (
+    get_current_user as get_actor,
+    get_db,
+    require_admin_user as require_admin_actor,
+)
 from app.models.lead import Lead
 from app.models.lead_event import LeadEvent
 from app.models.user import User
-from app.schemas.lead_schema import LeadAssignUpdate, LeadEventCreate, LeadEventResponse, LeadPipelineUpdate, LeadResponse, LeadUpdate
+from app.schemas.lead_schema import (
+    LeadAssignUpdate,
+    LeadEnrichBatchRequest,
+    LeadEnrichBatchResponse,
+    LeadEventCreate,
+    LeadEventResponse,
+    LeadPipelineUpdate,
+    LeadResponse,
+    LeadUpdate,
+)
+from app.services.enrichment_service import EnrichmentError, enrich_lead_record, enrich_leads_in_background
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
@@ -21,43 +35,6 @@ PIPELINE_STAGES = [
     "VENDA GANHA",
     "PERDIDO",
 ]
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def require_admin_actor(
-    x_actor_id: int | None = Header(default=None),
-    db: Session = Depends(get_db),
-):
-    actor = None
-
-    if x_actor_id is not None:
-        actor = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
-
-    if not actor or actor.role not in {"ROOT", "GERENTE"}:
-        raise HTTPException(status_code=403, detail="Somente root ou gerente pode executar esta acao")
-
-    return actor
-
-
-def get_actor(
-    x_actor_id: int | None = Header(default=None),
-    db: Session = Depends(get_db),
-):
-    if x_actor_id is None:
-        raise HTTPException(status_code=403, detail="Usuario nao identificado")
-
-    actor = db.query(User).filter(User.id == x_actor_id, User.is_active.is_(True)).first()
-    if not actor:
-        raise HTTPException(status_code=403, detail="Usuario nao identificado")
-
-    return actor
 
 
 def broker_ids_for_manager(db: Session, manager_id: int):
@@ -245,6 +222,63 @@ def lead_inventory(
             for nicho, pais, estado, cidade, total in combinacoes
         ],
     }
+
+
+@router.post("/enrich-batch", response_model=LeadEnrichBatchResponse, status_code=202)
+def enrich_lead_batch(
+    payload: LeadEnrichBatchRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_actor),
+):
+    query = apply_actor_scope(db.query(Lead.id), db, actor)
+
+    if payload.ids is not None:
+        query = query.filter(Lead.id.in_(payload.ids))
+        limit = len(payload.ids)
+    else:
+        if payload.filter and payload.filter.nicho:
+            query = query.filter(Lead.nicho.ilike(payload.filter.nicho.strip()))
+        if payload.filter and payload.filter.pais:
+            query = query.filter(Lead.pais.ilike(payload.filter.pais.strip()))
+        limit = payload.limit
+
+    lead_ids = [lead_id for (lead_id,) in query.order_by(Lead.id).limit(limit).all()]
+    if not lead_ids:
+        raise HTTPException(status_code=404, detail="Nenhum lead acessivel encontrado para enriquecimento")
+
+    background_tasks.add_task(
+        enrich_leads_in_background,
+        lead_ids,
+        actor.id,
+        actor_label(actor),
+    )
+    return LeadEnrichBatchResponse(status="scheduled", scheduled=len(lead_ids))
+
+
+@router.post("/{lead_id}/enrich", response_model=LeadResponse)
+def enrich_lead(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_actor),
+):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead nao encontrado")
+
+    ensure_lead_visible_to_actor(db, lead, actor)
+
+    try:
+        enrich_lead_record(
+            db,
+            lead,
+            actor_id=actor.id,
+            actor_name=actor_label(actor),
+        )
+    except EnrichmentError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return lead
 
 
 @router.get("/{lead_id}/events", response_model=list[LeadEventResponse])
