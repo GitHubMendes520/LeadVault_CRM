@@ -5,6 +5,8 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
+from sqlalchemy import update
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = ROOT_DIR.parent
 sys.path.insert(0, str(ROOT_DIR))
@@ -55,12 +57,13 @@ def apply_updates(session, updates, batch_size: int):
     stats = {
         "requested": len(updates),
         "applied": 0,
+        "processed": 0,
         "missing_target": 0,
         "skipped_empty_payload": 0,
         "field_updates": Counter(),
     }
 
-    for group in chunked(updates, batch_size):
+    for group_number, group in enumerate(chunked(updates, batch_size), start=1):
         candidate_ids = [item["crm_lead_id"] for item in group]
         existing_ids = {
             lead_id
@@ -82,20 +85,34 @@ def apply_updates(session, updates, batch_size: int):
                 stats["skipped_empty_payload"] += 1
                 continue
 
-            payload["id"] = lead_id
             payload["updated_at"] = datetime.utcnow()
-            mappings.append(payload)
+            mappings.append((lead_id, payload))
 
             for field_name in payload:
-                if field_name not in {"id", "updated_at"}:
+                if field_name != "updated_at":
                     stats["field_updates"][field_name] += 1
 
         if not mappings:
             continue
 
-        session.bulk_update_mappings(Lead, mappings)
+        for lead_id, payload in mappings:
+            result = session.execute(
+                update(Lead)
+                .where(Lead.id == lead_id)
+                .values(**payload)
+                .execution_options(synchronize_session=False)
+            )
+            if result.rowcount:
+                stats["applied"] += result.rowcount
+
         session.commit()
-        stats["applied"] += len(mappings)
+        stats["processed"] += len(group)
+        print(
+            f"Updates: lote {group_number} concluído "
+            f"({stats['processed']}/{stats['requested']} processados, "
+            f"{stats['applied']} aplicados)",
+            flush=True,
+        )
 
     stats["field_updates"] = dict(stats["field_updates"])
     return stats
