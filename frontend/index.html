@@ -1440,6 +1440,7 @@
       <button class="nav-main" data-view-target="atendimento">Atendimento</button>
       <button class="nav-main" data-view-target="relatorios">Relatórios</button>
       <button class="nav-main manager-only" data-view-target="suporte">Suporte</button>
+      <button class="nav-main" data-view-target="contratos">Contratos</button>
       <button class="nav-main root-only" data-view-target="usuarios">Usuários</button>
     </nav>
     <div class="spacer"></div>
@@ -1591,6 +1592,49 @@
       </div>
     </div>
   </section>
+  
+<section class="view" id="view-contratos">
+  <div class="admin-panel">
+    <div class="panel-header">
+      <div>
+        <p class="eyebrow">Documentos</p>
+        <h2>Contratos</h2>
+        <p>Crie e acompanhe contratos vinculados aos leads.</p>
+      </div>
+      <button class="primary-btn" type="button" onclick="loadContracts()">Atualizar</button>
+    </div>
+
+    <div class="view-grid">
+      <div class="panel-box">
+        <div class="panel-title">Novo contrato</div>
+        <form class="lead-form" id="contractForm" onsubmit="createContract(event)">
+          <input id="contractLeadId" type="number" placeholder="ID do Lead" required />
+          <select id="contractType" required>
+            <option value="COMPRA_E_VENDA">Compra e venda</option>
+            <option value="ALUGUEL">Aluguel</option>
+            <option value="EXCLUSIVIDADE">Exclusividade</option>
+            <option value="PRESTACAO_SERVICOS">Prestação de serviços</option>
+          </select>
+          <input id="contractClientName" placeholder="Nome do cliente" />
+          <input id="contractClientEmail" placeholder="Email do cliente" />
+          <input id="contractClientPhone" placeholder="Telefone do cliente" />
+          <input id="contractPropertyAddress" placeholder="Endereço / imóvel" />
+          <input id="contractBusinessValue" placeholder="Valor do negócio" />
+          <input id="contractCommissionValue" placeholder="Comissão" />
+          <textarea id="contractNotes" placeholder="Observações do contrato"></textarea>
+          <button class="primary-btn" type="submit">Criar contrato</button>
+        </form>
+      </div>
+
+      <div class="panel-box">
+        <div class="panel-title">Contratos criados</div>
+        <div class="broker-list" id="contractsList">
+          <div class="empty-state">Nenhum contrato carregado ainda.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
   <section class="view root-only" id="view-usuarios">
     <div class="view-grid">
@@ -1982,7 +2026,7 @@
         appearanceTitle: "Aparência",
         themeClassic: "Clássico claro",
         themePremium: "Premium dark",
-        nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Suporte", "Usuários"],
+        nav: ["Vendas", "Leads", "Atendimento", "Relatórios", "Suporte", "Contratos", "Usuários"],
         supportButton: "Suporte",
         supportTitle: "Suporte LeadVault",
         supportIntro: "Descreva o que aconteceu e em qual módulo. O pedido fica registrado para o administrador acompanhar.",
@@ -2124,7 +2168,7 @@
         appearanceTitle: "Appearance",
         themeClassic: "Classic light",
         themePremium: "Premium dark",
-        nav: ["Sales", "Leads", "Service", "Reports", "Support", "Users"],
+        nav: ["Sales", "Leads", "Service", "Reports", "Support", "Contracts", "Users"],
         supportButton: "Support",
         supportTitle: "LeadVault Support",
         supportIntro: "Describe what happened and which module is affected. The request is stored for the administrator to follow up.",
@@ -2274,7 +2318,7 @@
         appearanceTitle: "Apariencia",
         themeClassic: "Clásico claro",
         themePremium: "Premium dark",
-        nav: ["Ventas", "Leads", "Atención", "Reportes", "Soporte", "Usuarios"],
+        nav: ["Ventas", "Leads", "Atención", "Reportes", "Soporte", "Contratos", "Usuarios"],
         supportButton: "Soporte",
         supportTitle: "Soporte LeadVault",
         supportIntro: "Describe lo que ocurrió y en qué módulo. La solicitud queda registrada para seguimiento del administrador.",
@@ -2805,7 +2849,7 @@
       document.querySelectorAll(".nav .nav-main[data-view-target]").forEach((button) => {
         button.classList.toggle("active", button.dataset.viewTarget === viewName);
       });
-      document.body.classList.remove("view-vendas", "view-leads", "view-atendimento", "view-relatorios", "view-suporte", "view-usuarios");
+      document.body.classList.remove("view-vendas", "view-leads", "view-atendimento", "view-relatorios", "view-suporte", "view-usuarios", "view-contratos");
       document.body.classList.add(`view-${viewName}`);
       if (viewName === "suporte") {
         loadSupportTickets().catch(() => {});
@@ -3722,6 +3766,76 @@
           </div>
         `;
       }).join("");
+    }
+
+
+    let cachedContracts = [];
+
+    async function loadContracts() {
+      const list = document.getElementById("contractsList");
+      if (!list) return;
+
+      list.innerHTML = `<div class="empty-state">Carregando contratos...</div>`;
+
+      try {
+        const response = await apiFetch(`${API_BASE}/contracts/`);
+        if (!response.ok) {
+          list.innerHTML = `<div class="empty-state">Não foi possível carregar contratos.</div>`;
+          return;
+        }
+
+        cachedContracts = await response.json();
+
+        if (!cachedContracts.length) {
+          list.innerHTML = `<div class="empty-state">Nenhum contrato criado ainda.</div>`;
+          return;
+        }
+
+        list.innerHTML = cachedContracts.map((contract) => `
+          <div class="broker-card">
+            <div>
+              <strong>#${contract.id} · ${contract.contract_type}</strong>
+              <p>Status: ${contract.status}</p>
+              <p>Cliente: ${contract.client_name || "Não informado"}</p>
+              <p>Lead ID: ${contract.lead_id}</p>
+            </div>
+          </div>
+        `).join("");
+      } catch (error) {
+        list.innerHTML = `<div class="empty-state">Erro ao carregar contratos.</div>`;
+      }
+    }
+
+
+    async function createContract(event) {
+      event.preventDefault();
+
+      const payload = {
+        lead_id: Number(document.getElementById("contractLeadId").value),
+        contract_type: document.getElementById("contractType").value,
+        client_name: document.getElementById("contractClientName").value.trim() || null,
+        client_email: document.getElementById("contractClientEmail").value.trim() || null,
+        client_phone: document.getElementById("contractClientPhone").value.trim() || null,
+        property_address: document.getElementById("contractPropertyAddress").value.trim() || null,
+        business_value: document.getElementById("contractBusinessValue").value.trim() || null,
+        commission_value: document.getElementById("contractCommissionValue").value.trim() || null,
+        notes: document.getElementById("contractNotes").value.trim() || null,
+      };
+
+      const response = await apiFetch(`${API_BASE}/contracts/`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        alert("Não foi possível criar o contrato. Verifique o ID do lead e suas permissões.");
+        return;
+      }
+
+      document.getElementById("contractForm").reset();
+      await loadContracts();
+      alert("Contrato criado com sucesso.");
     }
 
     async function loadSupportTickets() {
