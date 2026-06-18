@@ -60,7 +60,9 @@ def exact_signature(record):
 
 
 def build_matrix_records(source_db: Path):
-    with sqlite3.connect(source_db) as conn:
+    source_db = Path(source_db)
+    matrix_uri = f"file:{source_db.as_posix()}?mode=ro&immutable=1"
+    with sqlite3.connect(matrix_uri, uri=True) as conn:
         conn.row_factory = sqlite3.Row
         segment_index = {}
         for row in conn.execute(

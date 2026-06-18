@@ -13,7 +13,7 @@ from app.core.security import hash_password
 from app.core.storage import UPLOADS_DIR
 from app.auth.routes import router as auth_router
 from app.database.connection import Base, SessionLocal, engine
-from app.models import import_job, lead, lead_event, support_ticket, user
+from app.models import import_job, lead, lead_event, support_ticket, user, contract
 from app.models.user import User
 from app.routes.import_routes import router as import_router
 from app.routes.admin_routes import router as admin_router
