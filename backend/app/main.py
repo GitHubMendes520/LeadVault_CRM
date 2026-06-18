@@ -20,6 +20,7 @@ from app.routes.admin_routes import router as admin_router
 from app.routes.lead_routes import router as lead_router
 from app.routes.support_routes import router as support_router
 from app.routes.user_routes import router as user_router
+from app.routes.contract_routes import router as contract_router
 
 app = FastAPI(
     title="LeadVault CRM MVP",
@@ -42,6 +43,7 @@ app.include_router(support_router)
 app.include_router(import_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(contract_router)
 
 frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
 if frontend_dir.exists():
