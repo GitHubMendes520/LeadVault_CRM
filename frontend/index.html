@@ -3029,9 +3029,11 @@
           <div class="line"><strong>✉</strong>${emailLineTemplate(lead.email)}</div>
           <div class="line"><strong>↗</strong>${siteLineTemplate(lead.site)}</div>
           ${contactActionTemplate(lead)}
+          ${["MONTAGEM DE PASTA", "VENDA GANHA"].includes(lead.pipeline) ? `
           <div class="card-actions-row">
             <button class="small-btn" type="button" onclick="prepareContractFromLead(${lead.id})">Contrato</button>
           </div>
+          ` : ""}
           <div class="card-clock" title="${escapeHtml(t("stageSince"))}: ${escapeHtml(lead.pipeline_updated_at || "")}">
             <strong>◷</strong>${t("stagnantFor")} ${escapeHtml(staleTime)}
           </div>
