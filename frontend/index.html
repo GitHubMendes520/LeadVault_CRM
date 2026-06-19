@@ -3151,6 +3151,7 @@
               <div class="timeline-meta">${when} · ${doc.document_type}</div>
               <div class="timeline-message">
                 <a href="${doc.file_path}" target="_blank" rel="noopener">${doc.file_name}</a>
+                <button class="small-btn danger" type="button" onclick="deleteLeadDocument(${leadId}, ${doc.id})">Excluir</button>
               </div>
             </div>
           `;
@@ -3158,6 +3159,25 @@
       } catch (error) {
         list.innerHTML = `<div class="timeline-item"><div class="timeline-message">Erro ao carregar documentos.</div></div>`;
       }
+    }
+
+
+    async function deleteLeadDocument(leadId, documentId) {
+      if (!confirm("Excluir este documento definitivamente?")) {
+        return;
+      }
+
+      const response = await apiFetch(`${API_BASE}/leads/${leadId}/documents/${documentId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        alert("Não foi possível excluir o documento.");
+        return;
+      }
+
+      await loadLeadDocuments(leadId);
+      await loadLeadTimeline(leadId);
     }
 
     async function uploadLeadDocument() {

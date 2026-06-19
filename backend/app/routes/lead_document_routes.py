@@ -116,3 +116,44 @@ def upload_lead_document(
         "file_size": doc.file_size,
         "created_at": doc.created_at,
     }
+
+
+@router.delete("/{lead_id}/documents/{document_id}")
+def delete_lead_document(
+    lead_id: int,
+    document_id: int,
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_actor),
+):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+    ensure_lead_visible_to_actor(db, lead, actor)
+
+    doc = (
+        db.query(LeadDocument)
+        .filter(LeadDocument.id == document_id, LeadDocument.lead_id == lead_id)
+        .first()
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento não encontrado")
+
+    file_path = UPLOADS_DIR.parent / doc.file_path.lstrip("/")
+    if file_path.exists():
+        file_path.unlink()
+
+    db.add(
+        LeadEvent(
+            lead_id=lead_id,
+            actor_id=actor.id,
+            actor_name=actor_label(actor),
+            event_type="DOCUMENTO",
+            message=f"Excluiu documento: {doc.document_type} - {doc.file_name}",
+        )
+    )
+
+    db.delete(doc)
+    db.commit()
+
+    return {"ok": True}
