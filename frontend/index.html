@@ -3029,6 +3029,9 @@
           <div class="line"><strong>✉</strong>${emailLineTemplate(lead.email)}</div>
           <div class="line"><strong>↗</strong>${siteLineTemplate(lead.site)}</div>
           ${contactActionTemplate(lead)}
+          <div class="card-actions-row">
+            <button class="small-btn" type="button" onclick="prepareContractFromLead(${lead.id})">Contrato</button>
+          </div>
           <div class="card-clock" title="${escapeHtml(t("stageSince"))}: ${escapeHtml(lead.pipeline_updated_at || "")}">
             <strong>◷</strong>${t("stagnantFor")} ${escapeHtml(staleTime)}
           </div>
@@ -3798,6 +3801,8 @@
               <p>Status: ${contract.status}</p>
               <p>Cliente: ${contract.client_name || "Não informado"}</p>
               <p>Lead ID: ${contract.lead_id}</p>
+              <button class="small-btn" type="button" onclick="loadContractEvents(${contract.id})">Ver histórico</button>
+              <div class="lead-timeline" id="contractEvents-${contract.id}"></div>
             </div>
           </div>
         `).join("");
@@ -3806,6 +3811,62 @@
       }
     }
 
+
+
+
+    function prepareContractFromLead(leadId) {
+      const lead = findLeadInCache(leadId);
+      if (!lead) {
+        alert("Lead não encontrado no cache atual. Recarregue o funil e tente novamente.");
+        return;
+      }
+
+      document.querySelector('[data-view-target="contratos"]')?.click();
+
+      setTimeout(() => {
+        document.getElementById("contractLeadId").value = lead.id || "";
+        document.getElementById("contractClientName").value = lead.nome || "";
+        document.getElementById("contractClientEmail").value = lead.email || "";
+        document.getElementById("contractClientPhone").value = lead.contato || "";
+        document.getElementById("contractPropertyAddress").value = lead.endereco || [lead.cidade, lead.estado, lead.pais].filter(Boolean).join(" · ");
+        document.getElementById("contractBusinessValue").value = lead.valor_negocio || "";
+        document.getElementById("contractNotes").value = `Contrato iniciado a partir do lead #${lead.id} - ${lead.nome || ""}`;
+      }, 150);
+    }
+
+    async function loadContractEvents(contractId) {
+      const box = document.getElementById(`contractEvents-${contractId}`);
+      if (!box) return;
+
+      box.innerHTML = `<p>Carregando histórico...</p>`;
+
+      try {
+        const response = await apiFetch(`${API_BASE}/contracts/${contractId}/events`);
+        if (!response.ok) {
+          box.innerHTML = `<p>Não foi possível carregar o histórico.</p>`;
+          return;
+        }
+
+        const events = await response.json();
+
+        if (!events.length) {
+          box.innerHTML = `<p>Nenhum evento registrado.</p>`;
+          return;
+        }
+
+        box.innerHTML = events.map((event) => {
+          const when = event.created_at ? new Date(event.created_at).toLocaleString() : "";
+          return `
+            <div class="timeline-item">
+              <strong>${when} · ${event.actor_name || "Sistema"} · ${event.event_type}</strong>
+              <p>${event.message || ""}</p>
+            </div>
+          `;
+        }).join("");
+      } catch (error) {
+        box.innerHTML = `<p>Erro ao carregar histórico.</p>`;
+      }
+    }
 
     async function createContract(event) {
       event.preventDefault();
