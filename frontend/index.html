@@ -1766,6 +1766,28 @@
             </div>
           </div>
         </div>
+        <div class="lead-history">
+          <div class="lead-history-title">Documentos anexados</div>
+          <div class="lead-note-box">
+            <select id="leadDocumentType">
+              <option value="DOCUMENTO_COM_FOTO">Documento com foto</option>
+              <option value="RG_CNH">RG / CNH</option>
+              <option value="COMPROVANTE_RESIDENCIA">Comprovante de residência</option>
+              <option value="COMPROVANTE_RENDA">Comprovante de renda</option>
+              <option value="CONTRATO_PDF">Contrato PDF</option>
+              <option value="PLANILHA_XLSX">Planilha XLSX</option>
+              <option value="OUTROS">Outros</option>
+            </select>
+            <input id="leadDocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx" />
+            <button type="button" id="uploadLeadDocumentButton">Anexar</button>
+          </div>
+          <div class="timeline-list" id="leadDocumentList">
+            <div class="timeline-item">
+              <div class="timeline-message">Nenhum documento anexado.</div>
+            </div>
+          </div>
+        </div>
+
         <div class="admin-lead-tools manager-only">
           <label class="modal-field">
             Mover para broker
@@ -3101,6 +3123,78 @@
       renderLeadTimeline(await response.json());
     }
 
+
+    async function loadLeadDocuments(leadId) {
+      const list = document.getElementById("leadDocumentList");
+      if (!list) return;
+
+      list.innerHTML = `<div class="timeline-item"><div class="timeline-message">Carregando documentos...</div></div>`;
+
+      try {
+        const response = await apiFetch(`${API_BASE}/leads/${leadId}/documents`);
+        if (!response.ok) {
+          list.innerHTML = `<div class="timeline-item"><div class="timeline-message">Não foi possível carregar documentos.</div></div>`;
+          return;
+        }
+
+        const documents = await response.json();
+
+        if (!documents.length) {
+          list.innerHTML = `<div class="timeline-item"><div class="timeline-message">Nenhum documento anexado.</div></div>`;
+          return;
+        }
+
+        list.innerHTML = documents.map((doc) => {
+          const when = doc.created_at ? new Date(doc.created_at).toLocaleString() : "";
+          return `
+            <div class="timeline-item">
+              <div class="timeline-meta">${when} · ${doc.document_type}</div>
+              <div class="timeline-message">
+                <a href="${doc.file_path}" target="_blank" rel="noopener">${doc.file_name}</a>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } catch (error) {
+        list.innerHTML = `<div class="timeline-item"><div class="timeline-message">Erro ao carregar documentos.</div></div>`;
+      }
+    }
+
+    async function uploadLeadDocument() {
+      const leadId = document.getElementById("leadId").value;
+      const fileInput = document.getElementById("leadDocumentFile");
+      const documentType = document.getElementById("leadDocumentType").value;
+
+      if (!leadId) {
+        alert("Abra um lead antes de anexar documentos.");
+        return;
+      }
+
+      if (!fileInput.files.length) {
+        alert("Escolha um arquivo para anexar.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("document_type", documentType);
+      formData.append("file", fileInput.files[0]);
+
+      const response = await apiFetch(`${API_BASE}/leads/${leadId}/documents`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        alert("Não foi possível anexar o documento. Verifique o formato permitido.");
+        return;
+      }
+
+      fileInput.value = "";
+      await loadLeadDocuments(leadId);
+      await loadLeadTimeline(leadId);
+      alert("Documento anexado com sucesso.");
+    }
+
     async function addLeadNote() {
       const leadId = document.getElementById("leadId").value;
       const input = document.getElementById("leadNoteInput");
@@ -3155,6 +3249,7 @@
       loadLeadTimeline(lead.id).catch(() => {
         renderLeadTimeline([]);
       });
+      loadLeadDocuments(lead.id).catch(() => {});
       leadModal.classList.add("open");
     }
 
@@ -4544,6 +4639,7 @@
     document.getElementById("returnBulkButton").addEventListener("click", returnBulkLeadsToBank);
     document.getElementById("assignSmartButton").addEventListener("click", sendToBroker);
     document.getElementById("saveLeadNoteButton").addEventListener("click", addLeadNote);
+    document.getElementById("uploadLeadDocumentButton").addEventListener("click", uploadLeadDocument);
     document.getElementById("refreshInventoryButton").addEventListener("click", loadInventory);
     document.getElementById("assignSegment").addEventListener("change", () => {
       refreshAssignGeoOptions();

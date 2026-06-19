@@ -1,0 +1,118 @@
+import shutil
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy.orm import Session
+
+from app.auth.jwt_handler import get_current_user as get_actor, get_db
+from app.core.storage import UPLOADS_DIR
+from app.models.lead import Lead
+from app.models.lead_document import LeadDocument
+from app.models.lead_event import LeadEvent
+from app.models.user import User
+from app.routes.lead_routes import ensure_lead_visible_to_actor, actor_label
+
+router = APIRouter(prefix="/leads", tags=["lead-documents"])
+
+ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".xlsx"}
+
+
+@router.get("/{lead_id}/documents")
+def list_lead_documents(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_actor),
+):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+    ensure_lead_visible_to_actor(db, lead, actor)
+
+    documents = (
+        db.query(LeadDocument)
+        .filter(LeadDocument.lead_id == lead_id)
+        .order_by(LeadDocument.created_at.desc(), LeadDocument.id.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": doc.id,
+            "lead_id": doc.lead_id,
+            "document_type": doc.document_type,
+            "file_name": doc.file_name,
+            "file_path": doc.file_path,
+            "file_mime": doc.file_mime,
+            "file_size": doc.file_size,
+            "created_at": doc.created_at,
+        }
+        for doc in documents
+    ]
+
+
+@router.post("/{lead_id}/documents")
+def upload_lead_document(
+    lead_id: int,
+    document_type: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_actor),
+):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+    ensure_lead_visible_to_actor(db, lead, actor)
+
+    original_name = file.filename or "arquivo"
+    ext = Path(original_name).suffix.lower()
+
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Formato não permitido")
+
+    folder = UPLOADS_DIR / "lead_documents" / str(lead_id)
+    folder.mkdir(parents=True, exist_ok=True)
+
+    safe_name = f"{uuid4().hex}{ext}"
+    destination = folder / safe_name
+
+    with destination.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    public_path = f"/uploads/lead_documents/{lead_id}/{safe_name}"
+
+    doc = LeadDocument(
+        lead_id=lead_id,
+        uploaded_by_user_id=actor.id,
+        document_type=document_type,
+        file_name=original_name,
+        file_path=public_path,
+        file_mime=file.content_type,
+        file_size=destination.stat().st_size,
+    )
+
+    db.add(doc)
+    db.add(
+        LeadEvent(
+            lead_id=lead_id,
+            actor_id=actor.id,
+            actor_name=actor_label(actor),
+            event_type="DOCUMENTO",
+            message=f"Anexou documento: {document_type} - {original_name}",
+        )
+    )
+    db.commit()
+    db.refresh(doc)
+
+    return {
+        "id": doc.id,
+        "lead_id": doc.lead_id,
+        "document_type": doc.document_type,
+        "file_name": doc.file_name,
+        "file_path": doc.file_path,
+        "file_mime": doc.file_mime,
+        "file_size": doc.file_size,
+        "created_at": doc.created_at,
+    }

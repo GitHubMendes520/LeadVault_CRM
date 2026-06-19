@@ -13,11 +13,12 @@ from app.core.security import hash_password
 from app.core.storage import UPLOADS_DIR
 from app.auth.routes import router as auth_router
 from app.database.connection import Base, SessionLocal, engine
-from app.models import import_job, lead, lead_event, support_ticket, user, contract, contract_event
+from app.models import import_job, lead, lead_event, support_ticket, user, contract, contract_event, lead_document
 from app.models.user import User
 from app.routes.import_routes import router as import_router
 from app.routes.admin_routes import router as admin_router
 from app.routes.lead_routes import router as lead_router
+from app.routes.lead_document_routes import router as lead_document_router
 from app.routes.support_routes import router as support_router
 from app.routes.user_routes import router as user_router
 from app.routes.contract_routes import router as contract_router
@@ -38,6 +39,7 @@ app.add_middleware(
 )
 
 app.include_router(lead_router)
+app.include_router(lead_document_router)
 app.include_router(user_router)
 app.include_router(support_router)
 app.include_router(import_router)
